@@ -4,12 +4,13 @@
              x:Class="DrivingSchoolApp.Pages.TrackingPage"
              Title="Tracking">
     <VerticalStackLayout Padding="16" Spacing="12">
-        <Label Text="GPS Tracking" FontSize="20" />
+        <Label Text="GPS Tracking (v1)" FontSize="20" />
+
+        <Label x:Name="StatusLabel" Text="Status: idle" />
 
         <HorizontalStackLayout Spacing="10">
-            <Button Text="Start" />
-            <Button Text="Stop" />
+            <Button Text="Start" Clicked="Start_Clicked" />
+            <Button Text="Stop" Clicked="Stop_Clicked" />
         </HorizontalStackLayout>
-
     </VerticalStackLayout>
 </ContentPage>
