@@ -1,18 +1,25 @@
+using System.Collections.ObjectModel;
+using DrivingSchoolApp.Models;
+
 namespace DrivingSchoolApp.Pages;
 
 public partial class TrackingPage : ContentPage
 {
-    private bool _isRunning;
+    private readonly ObservableCollection<TrackPoint> _points = new();
+    private CancellationTokenSource? _cts;
 
     public TrackingPage()
     {
         InitializeComponent();
+        PointsList.ItemsSource = _points;
+        UpdateCount();
     }
 
     private async void Start_Clicked(object sender, EventArgs e)
     {
-        StatusLabel.Text = "Status: requesting permission…";
+        if (_cts is not null) return;
 
+        StatusLabel.Text = "Status: requesting permission…";
         var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
         if (status != PermissionStatus.Granted)
         {
@@ -20,24 +27,63 @@ public partial class TrackingPage : ContentPage
             return;
         }
 
-        StatusLabel.Text = "Status: reading location…";
+        _cts = new CancellationTokenSource();
+        var ct = _cts.Token;
 
-        var location = await Geolocation.Default.GetLastKnownLocationAsync()
-                       ?? await Geolocation.Default.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.Best));
+        StatusLabel.Text = "Status: tracking…";
 
-        if (location is null)
+        _ = Task.Run(async () =>
         {
-            StatusLabel.Text = "Status: no location yet";
-            return;
-        }
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
 
-        _isRunning = true;
-        StatusLabel.Text = $"Status: OK ({location.Latitude:F6}, {location.Longitude:F6})";
+            while (await timer.WaitForNextTickAsync(ct))
+            {
+                try
+                {
+                    var request = new GeolocationRequest(GeolocationAccuracy.Best, TimeSpan.FromSeconds(5));
+                    var location = await Geolocation.Default.GetLocationAsync(request, ct);
+
+                    if (location is null) continue;
+
+                    var p = new TrackPoint(
+                        Timestamp: DateTimeOffset.UtcNow,
+                        Latitude: location.Latitude,
+                        Longitude: location.Longitude,
+                        AccuracyMeters: location.Accuracy,
+                        SpeedMps: location.Speed
+                    );
+
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        _points.Insert(0, p);
+                        if (_points.Count > 200) _points.RemoveAt(_points.Count - 1);
+                        UpdateCount();
+                        StatusLabel.Text = $"Status: tracking… ({p.Latitude:F6}, {p.Longitude:F6})";
+                    });
+                }
+                catch
+                {
+                    // keep running even if a tick fails
+                }
+            }
+        }, ct);
     }
 
     private void Stop_Clicked(object sender, EventArgs e)
     {
-        _isRunning = false;
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = null;
+
         StatusLabel.Text = "Status: stopped";
     }
+
+    private void Clear_Clicked(object sender, EventArgs e)
+    {
+        _points.Clear();
+        UpdateCount();
+    }
+
+    private void UpdateCount()
+        => CountLabel.Text = $"Points: {_points.Count}";
 }
