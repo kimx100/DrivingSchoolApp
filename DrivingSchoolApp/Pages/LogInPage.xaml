@@ -1,0 +1,61 @@
+<ContentPage
+    x:Class="DrivingSchoolApp.Pages.LogInPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Login"
+    BackgroundColor="{DynamicResource Secondary}">
+
+    <Grid Padding="24">
+        <Grid.Background>
+            <SolidColorBrush Color="White"></SolidColorBrush>
+        </Grid.Background>
+
+        <Border
+            Stroke="#f3f3f3"
+            StrokeShape="RoundRectangle 24"
+            Padding="28"
+            VerticalOptions="Center"
+            HorizontalOptions="Fill"
+            BackgroundColor="#f3f3f3"
+            StrokeThickness="1">
+            <Border.Shadow>
+                <Shadow
+                    Brush="#40000000"
+                    Offset="0,8"
+                    Radius="18"
+                    Opacity="0.35" />
+            </Border.Shadow>
+            <VerticalStackLayout Spacing="16">
+                <Label Text="Log ind"
+                       FontSize="28"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center"
+                       TextColor="Black" />
+
+                <Entry Placeholder="Email"
+                       Keyboard="Email"
+                       Text="{Binding Username}"
+                       HorizontalOptions="Fill" 
+                       BackgroundColor="White" />
+
+                <Entry Placeholder="Password"
+                       IsPassword="True"
+                       Text="{Binding Password}"
+                       HorizontalOptions="Fill" 
+                       BackgroundColor="White" />
+
+                <Button Text="Log ind"
+                        Command="{Binding LoginCommand}"
+                        CornerRadius="12"
+                        BackgroundColor="#1E63D6"
+                        TextColor="White" />
+
+                <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
+                    <Label Text="Forgot password?"
+                           FontSize="12"
+                           TextColor="#0D3B66" />
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+</ContentPage>

@@ -6,6 +6,20 @@
     xmlns:mapsui="clr-namespace:Mapsui.UI.Maui;assembly=Mapsui.UI.Maui"
     Title="Route Map">
 
-    <mapsui:MapView x:Name="RouteMapView"
-                    IsZoomButtonVisible="True" />
+    <Grid>
+        <mapsui:MapView
+            x:Name="RouteMapView"
+            IsZoomButtonVisible="True"
+            IsMyLocationButtonVisible="True" />
+
+        <Border
+            HorizontalOptions="Start"
+            VerticalOptions="End"
+            Margin="12"
+            Padding="8,4"
+            BackgroundColor="#CCFFFFFF"
+            StrokeThickness="0"
+            StrokeShape="RoundRectangle 8">
+        </Border>
+    </Grid>
 </ContentPage>

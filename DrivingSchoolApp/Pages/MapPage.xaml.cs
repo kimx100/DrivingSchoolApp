@@ -5,14 +5,23 @@ using Mapsui;
 using Mapsui.Projections;
 using Mapsui.Tiling;
 using Mapsui.UI.Maui;
-using Microsoft.Maui.Storage;
 using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Devices.Sensors;
+using Microsoft.Maui.Storage;
 
 namespace DrivingSchoolApp.Pages;
 
-public partial class MapPage
+public partial class MapPage : ContentPage
 {
     private bool _mapInitialized;
+    private bool _handlersAttached;
+    private bool _isTouchingMap;
+
+    private CancellationTokenSource? _liveLocationCts;
+    private MPoint? _lastLiveWorldPoint;
+
+    private const double FollowDisableBufferMeters = 120;
+    private static readonly TimeSpan LiveLocationInterval = TimeSpan.FromSeconds(3);
 
     public MapPage()
     {
@@ -23,79 +32,181 @@ public partial class MapPage
     {
         base.OnAppearing();
         _ = LoadAndDrawAsync();
+        StartLiveLocationLoop();
+    }
+
+    protected override void OnDisappearing()
+    {
+        StopLiveLocationLoop();
+        base.OnDisappearing();
     }
 
     private async Task LoadAndDrawAsync()
     {
         EnsureMapInitialized();
 
-        // Give the control a moment to size itself before navigation/zoom
         await Task.Delay(200);
 
         var lastId = Preferences.Get("LastRouteSessionId", string.Empty);
+        if (string.IsNullOrWhiteSpace(lastId))
+            return;
 
-        if (!string.IsNullOrWhiteSpace(lastId))
+        var session = await RouteStorage.LoadAsync(lastId);
+        if (session?.Points is { Count: > 1 })
         {
-            var session = await RouteStorage.LoadAsync(lastId);
-            if (session?.Points is { Count: > 1 })
-            {
-                DrawRoute(session.Points);
-                return;
-            }
+            DrawRoute(session.Points);
         }
-
-        DrawTestRoute();
-        
     }
 
     private void EnsureMapInitialized()
     {
-        if (_mapInitialized) return;
+        if (_mapInitialized)
+            return;
 
         var map = new Mapsui.Map();
-
-        // IMPORTANT: Provide your own user-agent string to avoid OSM blocking generic clients
-        // (OSM has blocked some default tile user agents in the past) :contentReference[oaicite:6]{index=6}
         map.Layers.Add(OpenStreetMap.CreateTileLayer("DrivingSchoolApp"));
 
         RouteMapView.Map = map;
+        RouteMapView.MyLocationEnabled = true;
+        RouteMapView.MyLocationFollow = false;
+
+        AttachMapHandlers();
 
         _mapInitialized = true;
     }
 
-    private void SetMyLocation(Position pos)
+    private void AttachMapHandlers()
     {
+        if (_handlersAttached)
+            return;
+
+        RouteMapView.MapPointerPressed += RouteMapView_MapPointerPressed;
+        RouteMapView.MapPointerMoved += RouteMapView_MapPointerMoved;
+        RouteMapView.MapPointerReleased += RouteMapView_MapPointerReleased;
+
+        _handlersAttached = true;
+    }
+
+    private void RouteMapView_MapPointerPressed(object? sender, MapEventArgs e)
+    {
+        _isTouchingMap = true;
+    }
+
+    private void RouteMapView_MapPointerMoved(object? sender, MapEventArgs e)
+    {
+        if (!_isTouchingMap)
+            return;
+
+        DisableFollowIfDraggedAway();
+    }
+
+    private void RouteMapView_MapPointerReleased(object? sender, MapEventArgs e)
+    {
+        _isTouchingMap = false;
+    }
+
+    private void StartLiveLocationLoop()
+    {
+        if (_liveLocationCts is not null)
+            return;
+
+        _liveLocationCts = new CancellationTokenSource();
+        _ = RunLiveLocationLoopAsync(_liveLocationCts.Token);
+    }
+
+    private async Task RunLiveLocationLoopAsync(CancellationToken ct)
+    {
+        try
+        {
+            var permission = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+            if (permission != PermissionStatus.Granted)
+                permission = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+
+            if (permission != PermissionStatus.Granted)
+                return;
+
+            using var timer = new PeriodicTimer(LiveLocationInterval);
+
+            while (await timer.WaitForNextTickAsync(ct))
+            {
+                try
+                {
+                    var request = new GeolocationRequest(
+                        GeolocationAccuracy.Best,
+                        TimeSpan.FromSeconds(5));
+
+                    var location = await Geolocation.Default.GetLocationAsync(request, ct);
+                    if (location is null)
+                        continue;
+
+                    UpdateLiveLocation(location);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch
+                {
+                    // ignore failed ticks and keep polling
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // ignore
+        }
+    }
+
+    private void StopLiveLocationLoop()
+    {
+        var cts = _liveLocationCts;
+        _liveLocationCts = null;
+
+        if (cts is null)
+            return;
+
+        cts.Cancel();
+        cts.Dispose();
+
+        _isTouchingMap = false;
+    }
+
+    private void UpdateLiveLocation(Location location)
+    {
+        var livePosition = new Position(location.Latitude, location.Longitude);
+        var (x, y) = SphericalMercator.FromLonLat(location.Longitude, location.Latitude);
+        _lastLiveWorldPoint = new MPoint(x, y);
+
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            // Update the internal MyLocationLayer so the MyLocation button
-            // centers to the correct position (instead of 0,0)
-            RouteMapView.MyLocationLayer.UpdateMyLocation(pos);
             RouteMapView.MyLocationEnabled = true;
-            RouteMapView.MyLocationFollow = false;
+            RouteMapView.MyLocationLayer.UpdateMyLocation(livePosition, false);
+
+            if (location.Speed is double speed && speed >= 0)
+                RouteMapView.MyLocationLayer.UpdateMySpeed(speed);
+
+            if (RouteMapView.MyLocationFollow && _lastLiveWorldPoint is not null)
+            {
+                RouteMapView.Map?.Navigator?.CenterOn(_lastLiveWorldPoint);
+            }
         });
     }
-    
-    private void DrawTestRoute()
+
+    private void DisableFollowIfDraggedAway()
     {
-        RouteMapView.Drawables.Clear();
-        RouteMapView.Pins.Clear();
+        if (!RouteMapView.MyLocationFollow || _lastLiveWorldPoint is null)
+            return;
 
-        var start = new Position(55.6761, 12.5683);
-        var end = new Position(55.6830, 12.5710);
+        var navigator = RouteMapView.Map?.Navigator;
+        if (navigator is null)
+            return;
 
-        var line = new Polyline
-        {
-            StrokeWidth = 6,
-            StrokeColor = Microsoft.Maui.Graphics.Colors.Blue
-        };
+        var viewport = navigator.Viewport;
+        var center = new MPoint(viewport.CenterX, viewport.CenterY);
+        var distance = center.Distance(_lastLiveWorldPoint);
 
-        line.Positions.Add(start);
-        line.Positions.Add(end);
-
-        RouteMapView.Drawables.Add(line);
-
-        ZoomToPositions(new[] { start, end });
-        SetMyLocation(end);
+        if (distance > FollowDisableBufferMeters)
+            RouteMapView.MyLocationFollow = false;
     }
 
     private void DrawRoute(List<TrackPoint> points)
@@ -103,7 +214,6 @@ public partial class MapPage
         RouteMapView.Drawables.Clear();
         RouteMapView.Pins.Clear();
 
-        // Your TrackingPage inserts newest first -> sort to draw in order
         var ordered = points.OrderBy(p => p.Timestamp).ToList();
 
         var line = new Polyline
@@ -116,23 +226,14 @@ public partial class MapPage
             line.Positions.Add(new Position(p.Latitude, p.Longitude));
 
         RouteMapView.Drawables.Add(line);
-
-// Center to the route bounds
         ZoomToPositions(line.Positions);
-        SetMyLocation(line.Positions[^1]);
-
-// Optional: also center to the latest point (helps you verify it's correct)
-        var last = ordered[^1];
-        var (x, y) = Mapsui.Projections.SphericalMercator.FromLonLat(last.Longitude, last.Latitude);
-        RouteMapView.Map?.Navigator?.CenterOn(new Mapsui.MPoint(x, y));
     }
 
     private void ZoomToPositions(IList<Position> positions)
     {
-        if (RouteMapView.Map is null) return;
-        if (positions.Count == 0) return;
+        if (RouteMapView.Map is null || positions.Count == 0)
+            return;
 
-        // FromLonLat(double lon, double lat) returns (double x, double y)
         var world = positions
             .Select(p => SphericalMercator.FromLonLat(p.Longitude, p.Latitude))
             .ToList();
@@ -144,7 +245,6 @@ public partial class MapPage
 
         foreach (var w in world)
         {
-            // tuple fields are always accessible via Item1/Item2
             var x = w.Item1;
             var y = w.Item2;
 

@@ -8,12 +8,12 @@
 
     <TabBar>
         <ShellContent
-            Title="Tracking"
-            ContentTemplate="{DataTemplate pages:TrackingPage}" />
+            Title="Route"
+            ContentTemplate="{DataTemplate pages:LiveRoutePage}" />
 
         <ShellContent
-            Title="Map"
-            ContentTemplate="{DataTemplate pages:MapPage}" />
+            Title="Login"
+            ContentTemplate="{DataTemplate pages:LogInPage}" />
     </TabBar>
 
 </Shell>

@@ -1,5 +1,6 @@
-﻿namespace DrivingSchoolApp;
-using DrivingSchoolApp.Pages;
+﻿using DrivingSchoolApp.Pages;
+
+namespace DrivingSchoolApp;
 
 public partial class AppShell : Shell
 {
@@ -7,6 +8,6 @@ public partial class AppShell : Shell
     {
         InitializeComponent();
 
-        Routing.RegisterRoute(nameof(MapPage), typeof(MapPage));
+        Routing.RegisterRoute(nameof(LiveRoutePage), typeof(LiveRoutePage));
     }
 }

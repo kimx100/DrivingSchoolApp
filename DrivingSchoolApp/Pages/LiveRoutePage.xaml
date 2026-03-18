@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="DrivingSchoolApp.Pages.LiveRoutePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:mapsui="clr-namespace:Mapsui.UI.Maui;assembly=Mapsui.UI.Maui"
+    Title="Route"
+    BackgroundColor="{StaticResource PageBackground}">
+
+    <Grid>
+        <mapsui:MapView
+            x:Name="RouteMapView"
+            IsZoomButtonVisible="True"
+            IsMyLocationButtonVisible="False" />
+
+        <Grid
+            Padding="16"
+            RowDefinitions="Auto,Auto,*,Auto">
+
+            <Border
+                Grid.Row="0"
+                BackgroundColor="#EFFFFFFF"
+                Stroke="{StaticResource InputBorder}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 18"
+                Padding="14">
+
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                        <Label
+                            x:Name="StatusLabel"
+                            Text="Ready to start"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            TextColor="{StaticResource Black}" />
+
+                        <Label
+                            x:Name="LocationLabel"
+                            Text="Location unavailable"
+                            FontSize="12"
+                            TextColor="{StaticResource Gray600}" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout
+                        Grid.Column="1"
+                        Spacing="4"
+                        HorizontalOptions="End">
+                        <Label
+                            x:Name="ElapsedLabel"
+                            Text="00:00"
+                            FontSize="22"
+                            FontAttributes="Bold"
+                            HorizontalTextAlignment="End"
+                            TextColor="{StaticResource Black}" />
+
+                        <Label
+                            x:Name="CountLabel"
+                            Text="Points: 0"
+                            FontSize="12"
+                            HorizontalTextAlignment="End"
+                            TextColor="{StaticResource Gray600}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Border
+                Grid.Row="1"
+                Margin="0,14,0,0"
+                HorizontalOptions="Center"
+                BackgroundColor="#F7FFFFFF"
+                Stroke="{StaticResource InputBorder}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 999"
+                Padding="22,16">
+
+                <VerticalStackLayout Spacing="2">
+                    <Label
+                        x:Name="HeroElapsedLabel"
+                        Text="00:00"
+                        FontSize="34"
+                        FontAttributes="Bold"
+                        HorizontalTextAlignment="Center"
+                        TextColor="{StaticResource Black}" />
+
+                    <Label
+                        Text="route time"
+                        FontSize="12"
+                        HorizontalTextAlignment="Center"
+                        TextColor="{StaticResource Gray600}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Button
+                x:Name="RecenterButton"
+                Grid.Row="2"
+                Text="Center"
+                Clicked="RecenterButton_Clicked"
+                HorizontalOptions="End"
+                VerticalOptions="End"
+                Margin="0,0,0,24"
+                Padding="16,10"
+                BackgroundColor="{StaticResource White}"
+                TextColor="{StaticResource Black}"
+                IsVisible="False" />
+
+            <Border
+                Grid.Row="3"
+                Margin="0,16,0,0"
+                BackgroundColor="#F7FFFFFF"
+                Stroke="{StaticResource InputBorder}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 22"
+                Padding="12">
+
+                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10">
+                    <Button
+                        x:Name="StartButton"
+                        Grid.Column="0"
+                        Text="Start"
+                        Clicked="StartButton_Clicked" />
+
+                    <Button
+                        x:Name="StopButton"
+                        Grid.Column="1"
+                        Text="Stop"
+                        Clicked="StopButton_Clicked" />
+
+                    <Button
+                        x:Name="EndButton"
+                        Grid.Column="2"
+                        Text="End"
+                        Clicked="EndButton_Clicked" />
+
+                    <Button
+                        x:Name="ResetButton"
+                        Grid.Column="3"
+                        Text="Reset"
+                        Clicked="ResetButton_Clicked"
+                        BackgroundColor="{StaticResource Gray300}"
+                        TextColor="{StaticResource Black}" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid
+            x:Name="FirstFixOverlay"
+            BackgroundColor="#66000000"
+            IsVisible="False"
+            InputTransparent="False">
+
+            <Border
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                WidthRequest="280"
+                BackgroundColor="{StaticResource White}"
+                Stroke="{StaticResource InputBorder}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 20"
+                Padding="20">
+
+                <VerticalStackLayout Spacing="10">
+                    <ActivityIndicator
+                        IsRunning="True"
+                        Color="{StaticResource Primary}"
+                        HorizontalOptions="Center" />
+
+                    <Label
+                        Text="Waiting for first GPS point"
+                        FontSize="18"
+                        FontAttributes="Bold"
+                        HorizontalTextAlignment="Center"
+                        TextColor="{StaticResource Black}" />
+
+                    <Label
+                        Text="Keep the app open for a moment while the phone gets a valid location lock."
+                        FontSize="13"
+                        HorizontalTextAlignment="Center"
+                        TextColor="{StaticResource Gray600}" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>
