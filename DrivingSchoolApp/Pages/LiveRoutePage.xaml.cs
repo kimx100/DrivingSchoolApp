@@ -1,5 +1,6 @@
 using System.Linq;
 using DrivingSchoolApp.Models;
+using DrivingSchoolApp.Services;
 using DrivingSchoolApp.Services.Tracking;
 using Mapsui;
 using Mapsui.Projections;
@@ -7,6 +8,7 @@ using Mapsui.Tiling;
 using Mapsui.UI.Maui;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Devices.Sensors;
+using Microsoft.Maui.Storage;
 
 namespace DrivingSchoolApp.Pages;
 
@@ -15,10 +17,11 @@ public partial class LiveRoutePage : ContentPage
     private readonly TrackingCoordinator _tracking = TrackingCoordinator.Instance;
 
     private bool _mapInitialized;
+    private bool _hasInitialViewport;
     private bool _handlersAttached;
     private bool _isTouchingMap;
     private bool _autoFollow = true;
-    private bool _hasCenteredOnTrackedPoint;
+    private bool _hasCenteredOnce;
 
     private CancellationTokenSource? _liveLocationCts;
     private PeriodicTimer? _elapsedTimer;
@@ -26,8 +29,9 @@ public partial class LiveRoutePage : ContentPage
     private Location? _lastLiveLocation;
     private MPoint? _lastLiveWorldPoint;
 
+    private const string BackgroundPromptKey = "BackgroundTrackingPromptShownV1";
     private const double FollowDisableBufferMeters = 120;
-    private static readonly TimeSpan LiveLocationInterval = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan LiveLocationInterval = TimeSpan.FromSeconds(2);
 
     public LiveRoutePage()
     {
@@ -44,6 +48,7 @@ public partial class LiveRoutePage : ContentPage
         _tracking.SnapshotChanged += OnSnapshotChanged;
 
         RefreshFromCoordinator();
+        _ = PrimeInitialViewportAsync();
         StartLiveLocationLoop();
     }
 
@@ -73,6 +78,87 @@ public partial class LiveRoutePage : ContentPage
         AttachMapHandlers();
         _mapInitialized = true;
     }
+    
+    private async Task PrimeInitialViewportAsync()
+{
+    if (_hasInitialViewport)
+        return;
+
+    try
+    {
+        var permission = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+        if (permission != PermissionStatus.Granted)
+            return;
+
+        var cached = await Geolocation.Default.GetLastKnownLocationAsync();
+        if (cached is not null &&
+            !(Math.Abs(cached.Latitude) < 0.0001 && Math.Abs(cached.Longitude) < 0.0001))
+        {
+            _lastLiveLocation = cached;
+
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                ZoomToRadius(cached.Latitude, cached.Longitude, 150);
+                UpdateLiveLocation(cached);
+                _hasInitialViewport = true;
+            });
+        }
+    }
+    catch
+    {
+        // ignore cached-location failures
+    }
+}
+
+private async Task TryPrimeFirstRoutePointAsync()
+{
+    try
+    {
+        var snapshot = _tracking.GetSnapshot();
+        if (snapshot.HasFirstPoint)
+            return;
+
+        var location = await Geolocation.Default.GetLocationAsync(
+            new GeolocationRequest(GeolocationAccuracy.Best, TimeSpan.FromSeconds(8)));
+
+        if (location is null)
+            return;
+
+        if (Math.Abs(location.Latitude) < 0.0001 && Math.Abs(location.Longitude) < 0.0001)
+            return;
+
+        var raw = new TrackPoint(
+            Timestamp: DateTimeOffset.UtcNow,
+            Latitude: location.Latitude,
+            Longitude: location.Longitude,
+            AccuracyMeters: location.Accuracy,
+            SpeedMps: location.Speed
+        );
+
+        if (_tracking.TryAcceptRawPoint(raw, out _))
+            RefreshFromCoordinator();
+    }
+    catch
+    {
+        // ignore prime failures
+    }
+}
+
+private void ZoomToRadius(double latitude, double longitude, double radiusMeters)
+{
+    if (RouteMapView.Map?.Navigator is null)
+        return;
+
+    var (x, y) = SphericalMercator.FromLonLat(longitude, latitude);
+    var box = new MRect(
+        x - radiusMeters,
+        y - radiusMeters,
+        x + radiusMeters,
+        y + radiusMeters);
+
+    _lastLiveWorldPoint = new MPoint(x, y);
+    RouteMapView.Map.Navigator.ZoomToBox(box);
+}
 
     private void AttachMapHandlers()
     {
@@ -106,15 +192,15 @@ public partial class LiveRoutePage : ContentPage
 
     private async void StartButton_Clicked(object sender, EventArgs e)
     {
-        var before = _tracking.GetSnapshot();
+        var snapshotBefore = _tracking.GetSnapshot();
 
-        if (before.IsTracking)
+        if (snapshotBefore.IsTracking)
             return;
 
         var locationStatus = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
         if (locationStatus != PermissionStatus.Granted)
         {
-            StatusLabel.Text = "Location permission denied";
+            await DisplayAlert("Location required", "Location permission is needed to start route tracking.", "OK");
             return;
         }
 
@@ -134,20 +220,22 @@ public partial class LiveRoutePage : ContentPage
         var serviceStarted = await LessonTrackingPlatform.StartAsync();
         if (!serviceStarted)
         {
-            if (!before.HasActiveSession)
+            if (!snapshotBefore.HasActiveSession)
                 _tracking.ClearSession();
             else
                 _tracking.PauseSession();
 
-            StatusLabel.Text = "Could not start background tracking";
+            await DisplayAlert("Tracking error", "Could not start background tracking.", "OK");
             return;
         }
 
         _autoFollow = true;
-        RecenterButton.IsVisible = false;
         RouteMapView.MyLocationFollow = true;
+        RecenterButton.IsVisible = false;
 
+        await TryPrimeFirstRoutePointAsync();
         RefreshFromCoordinator();
+        await MaybeShowBackgroundTrackingPromptAsync();
     }
 
     private async void StopButton_Clicked(object sender, EventArgs e)
@@ -182,18 +270,16 @@ public partial class LiveRoutePage : ContentPage
 
         var savedSession = await _tracking.EndAndSaveAsync();
 
+        if (savedSession is not null)
+            await RouteSnapBackgroundProcessor.EnqueueAsync(savedSession.Id);
+
         _autoFollow = true;
         RecenterButton.IsVisible = false;
         RouteMapView.MyLocationFollow = false;
-        _hasCenteredOnTrackedPoint = false;
+        _hasCenteredOnce = false;
 
         ClearRouteVisuals();
         RefreshFromCoordinator();
-
-        if (savedSession is not null)
-            StatusLabel.Text = $"Route saved ({savedSession.Points.Count} points)";
-        else
-            StatusLabel.Text = "Route ended";
     }
 
     private async void ResetButton_Clicked(object sender, EventArgs e)
@@ -219,7 +305,7 @@ public partial class LiveRoutePage : ContentPage
         _autoFollow = true;
         RecenterButton.IsVisible = false;
         RouteMapView.MyLocationFollow = false;
-        _hasCenteredOnTrackedPoint = false;
+        _hasCenteredOnce = false;
 
         ClearRouteVisuals();
         RefreshFromCoordinator();
@@ -247,13 +333,14 @@ public partial class LiveRoutePage : ContentPage
     {
         MainThread.BeginInvokeOnMainThread(() =>
         {
-            RedrawRoute(_tracking.GetAllPointsOldestFirst());
+            var points = _tracking.GetAllPointsOldestFirst();
+            RedrawRoute(points);
 
             if (_autoFollow)
                 CenterOn(point.Latitude, point.Longitude);
 
-            if (!_hasCenteredOnTrackedPoint)
-                _hasCenteredOnTrackedPoint = true;
+            if (!_hasCenteredOnce)
+                _hasCenteredOnce = true;
 
             RefreshFromCoordinator();
         });
@@ -274,10 +361,14 @@ public partial class LiveRoutePage : ContentPage
 
     private void RefreshFromSnapshot(TrackingSnapshot snapshot)
     {
-        UpdateSummary(snapshot);
-        UpdateButtons(snapshot);
-        UpdateLoadingOverlay(snapshot);
-        UpdateLocationText(snapshot.LatestPoint);
+        HeroElapsedLabel.Text = FormatElapsed(snapshot.Elapsed);
+        StartButton.IsEnabled = !snapshot.IsTracking;
+        StartButton.Text = snapshot.IsPaused ? "Resume" : "Start";
+        StopButton.IsEnabled = snapshot.IsTracking;
+        EndButton.IsEnabled = snapshot.HasActiveSession;
+        ResetButton.IsEnabled = snapshot.HasActiveSession;
+
+        FirstFixOverlay.IsVisible = snapshot.IsTracking && !snapshot.HasFirstPoint;
 
         if (snapshot.IsTracking)
         {
@@ -289,55 +380,14 @@ public partial class LiveRoutePage : ContentPage
             StopElapsedTimer();
         }
 
-        RedrawRoute(_tracking.GetAllPointsOldestFirst());
-    }
+        var points = _tracking.GetAllPointsOldestFirst();
+        RedrawRoute(points);
 
-    private void UpdateSummary(TrackingSnapshot snapshot)
-    {
-        ElapsedLabel.Text = FormatElapsed(snapshot.Elapsed);
-        HeroElapsedLabel.Text = FormatElapsed(snapshot.Elapsed);
-        CountLabel.Text = $"Points: {snapshot.TotalPointCount}";
-
-        if (snapshot.IsTracking && !snapshot.HasFirstPoint)
-            StatusLabel.Text = "Waiting for GPS...";
-        else if (snapshot.IsTracking)
-            StatusLabel.Text = "Tracking live";
-        else if (snapshot.IsPaused)
-            StatusLabel.Text = "Tracking paused";
-        else
-            StatusLabel.Text = "Ready to start";
-    }
-
-    private void UpdateButtons(TrackingSnapshot snapshot)
-    {
-        StartButton.IsEnabled = !snapshot.IsTracking;
-        StartButton.Text = snapshot.IsPaused ? "Resume" : "Start";
-
-        StopButton.IsEnabled = snapshot.IsTracking;
-        EndButton.IsEnabled = snapshot.HasActiveSession;
-        ResetButton.IsEnabled = snapshot.HasActiveSession;
-    }
-
-    private void UpdateLoadingOverlay(TrackingSnapshot snapshot)
-    {
-        FirstFixOverlay.IsVisible = snapshot.IsTracking && !snapshot.HasFirstPoint;
-    }
-
-    private void UpdateLocationText(TrackPoint? trackedPoint)
-    {
-        if (trackedPoint is not null)
+        if (points.Count > 1 && !_hasCenteredOnce)
         {
-            LocationLabel.Text = $"Lat {trackedPoint.Latitude:F5} · Lng {trackedPoint.Longitude:F5}";
-            return;
+            ZoomToPositions(points.Select(p => new Position(p.Latitude, p.Longitude)).ToList());
+            _hasCenteredOnce = true;
         }
-
-        if (_lastLiveLocation is not null)
-        {
-            LocationLabel.Text = $"Lat {_lastLiveLocation.Latitude:F5} · Lng {_lastLiveLocation.Longitude:F5}";
-            return;
-        }
-
-        LocationLabel.Text = "Location unavailable";
     }
 
     private void RedrawRoute(IReadOnlyList<TrackPoint> points)
@@ -345,19 +395,30 @@ public partial class LiveRoutePage : ContentPage
         RouteMapView.Drawables.Clear();
         RouteMapView.Pins.Clear();
 
-        if (points.Count <= 1)
+        if (points.Count == 0)
             return;
 
-        var line = new Polyline
+        if (points.Count > 1)
         {
-            StrokeWidth = 6,
-            StrokeColor = Microsoft.Maui.Graphics.Color.FromArgb("#2F6FD6")
-        };
+            var line = new Polyline
+            {
+                StrokeWidth = 7,
+                StrokeColor = Microsoft.Maui.Graphics.Color.FromArgb("#2F6FD6")
+            };
 
-        foreach (var point in points.OrderBy(p => p.Timestamp))
-            line.Positions.Add(new Position(point.Latitude, point.Longitude));
+            foreach (var point in points.OrderBy(p => p.Timestamp))
+                line.Positions.Add(new Position(point.Latitude, point.Longitude));
 
-        RouteMapView.Drawables.Add(line);
+            RouteMapView.Drawables.Add(line);
+        }
+
+        var first = points.First();
+
+        RouteMapView.Pins.Add(new Pin
+        {
+            Label = "Start",
+            Position = new Position(first.Latitude, first.Longitude)
+        });
     }
 
     private void ClearRouteVisuals()
@@ -376,6 +437,35 @@ public partial class LiveRoutePage : ContentPage
 
         _lastLiveWorldPoint = worldPoint;
         RouteMapView.Map.Navigator.CenterOn(worldPoint);
+    }
+
+    private void ZoomToPositions(IList<Position> positions)
+    {
+        if (RouteMapView.Map is null || positions.Count == 0)
+            return;
+
+        var world = positions
+            .Select(p => SphericalMercator.FromLonLat(p.Longitude, p.Latitude))
+            .ToList();
+
+        double minX = double.PositiveInfinity;
+        double minY = double.PositiveInfinity;
+        double maxX = double.NegativeInfinity;
+        double maxY = double.NegativeInfinity;
+
+        foreach (var w in world)
+        {
+            var x = w.Item1;
+            var y = w.Item2;
+
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+        }
+
+        var box = new MRect(minX, minY, maxX, maxY);
+        RouteMapView.Map.Navigator.ZoomToBox(box);
     }
 
     private void DisableFollowIfDraggedAway()
@@ -414,10 +504,24 @@ public partial class LiveRoutePage : ContentPage
         {
             var permission = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
             if (permission != PermissionStatus.Granted)
-                permission = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
-
-            if (permission != PermissionStatus.Granted)
                 return;
+
+            try
+            {
+                var immediate = await Geolocation.Default.GetLocationAsync(
+                    new GeolocationRequest(GeolocationAccuracy.Best, TimeSpan.FromSeconds(8)),
+                    ct);
+
+                if (immediate is not null &&
+                    !(Math.Abs(immediate.Latitude) < 0.0001 && Math.Abs(immediate.Longitude) < 0.0001))
+                {
+                    UpdateLiveLocation(immediate);
+                }
+            }
+            catch
+            {
+                // ignore immediate one-shot failure
+            }
 
             using var timer = new PeriodicTimer(LiveLocationInterval);
 
@@ -444,7 +548,7 @@ public partial class LiveRoutePage : ContentPage
                 }
                 catch
                 {
-                    // ignore failed ticks and keep polling
+                    // keep polling
                 }
             }
         }
@@ -469,8 +573,6 @@ public partial class LiveRoutePage : ContentPage
 
             if (location.Speed is double speed && speed >= 0)
                 RouteMapView.MyLocationLayer.UpdateMySpeed(speed);
-
-            UpdateLocationText(_tracking.GetSnapshot().LatestPoint);
 
             if (_autoFollow)
                 RouteMapView.Map?.Navigator?.CenterOn(_lastLiveWorldPoint);
@@ -510,7 +612,6 @@ public partial class LiveRoutePage : ContentPage
 
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
-                        ElapsedLabel.Text = FormatElapsed(snapshot.Elapsed);
                         HeroElapsedLabel.Text = FormatElapsed(snapshot.Elapsed);
                     });
                 }
@@ -526,6 +627,34 @@ public partial class LiveRoutePage : ContentPage
     {
         _elapsedTimer?.Dispose();
         _elapsedTimer = null;
+    }
+
+    private async Task MaybeShowBackgroundTrackingPromptAsync()
+    {
+#if ANDROID
+        if (Preferences.Get(BackgroundPromptKey, false))
+            return;
+
+        Preferences.Set(BackgroundPromptKey, true);
+
+        var choice = await DisplayActionSheet(
+            "For better route continuity when the screen turns off, open app settings and allow background location if your phone offers that option.",
+            "Not now",
+            null,
+            "Open settings");
+
+        if (choice == "Open settings")
+        {
+            try
+            {
+                AppInfo.Current.ShowSettingsUI();
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+#endif
     }
 
     private static string FormatElapsed(TimeSpan elapsed)

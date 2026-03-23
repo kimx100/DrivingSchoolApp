@@ -23,7 +23,8 @@ public sealed class TrackProcessingService
         var acc = raw.AccuracyMeters ?? 9999;
 
         // 1) Drop very inaccurate points
-        if (acc > 50)
+        var maxAllowedAccuracy = _lastAccepted is null ? 80 : 50;
+        if (acc > maxAllowedAccuracy)
             return false;
 
         if (_lastAccepted is not null)
@@ -98,4 +99,4 @@ public sealed class TrackProcessingService
         var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
         return R * c;
     }
-}
+}   

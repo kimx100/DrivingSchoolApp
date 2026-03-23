@@ -1,4 +1,5 @@
 ﻿using DrivingSchoolApp.Pages;
+using DrivingSchoolApp.Services;
 
 namespace DrivingSchoolApp;
 
@@ -8,6 +9,8 @@ public partial class AppShell : Shell
     {
         InitializeComponent();
 
-        Routing.RegisterRoute(nameof(LiveRoutePage), typeof(LiveRoutePage));
+        Routing.RegisterRoute(nameof(RouteDetailPage), typeof(RouteDetailPage));
+
+        _ = RouteSnapBackgroundProcessor.EnsureWorkQueuedForAllRoutesAsync();
     }
 }

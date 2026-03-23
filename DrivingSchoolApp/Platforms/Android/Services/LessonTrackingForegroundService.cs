@@ -104,33 +104,22 @@ public class LessonTrackingForegroundService : global::Android.App.Service
 
     private async Task RunTrackingLoopAsync(CancellationToken ct)
     {
+        try
+        {
+            await TryCaptureAndProcessPointAsync(ct);
+        }
+        catch
+        {
+            // ignore immediate first-capture failure
+        }
+
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
 
         while (await timer.WaitForNextTickAsync(ct))
         {
             try
             {
-                var request = new GeolocationRequest(
-                    GeolocationAccuracy.Best,
-                    TimeSpan.FromSeconds(5));
-
-                var location = await Geolocation.Default.GetLocationAsync(request, ct);
-                if (location is null)
-                    continue;
-
-                var raw = new TrackPoint(
-                    Timestamp: DateTimeOffset.UtcNow,
-                    Latitude: location.Latitude,
-                    Longitude: location.Longitude,
-                    AccuracyMeters: location.Accuracy,
-                    SpeedMps: location.Speed
-                );
-
-                if (TrackingCoordinator.Instance.TryAcceptRawPoint(raw, out _))
-                {
-                    var snapshot = TrackingCoordinator.Instance.GetSnapshot();
-                    UpdateNotification(snapshot.TotalPointCount);
-                }
+                await TryCaptureAndProcessPointAsync(ct);
             }
             catch (System.OperationCanceledException)
             {
@@ -142,7 +131,35 @@ public class LessonTrackingForegroundService : global::Android.App.Service
             }
         }
     }
+    
+    private async Task TryCaptureAndProcessPointAsync(CancellationToken ct)
+    {
+        var request = new GeolocationRequest(
+            GeolocationAccuracy.Best,
+            TimeSpan.FromSeconds(8));
 
+        var location = await Geolocation.Default.GetLocationAsync(request, ct);
+        if (location is null)
+            return;
+
+        if (Math.Abs(location.Latitude) < 0.0001 && Math.Abs(location.Longitude) < 0.0001)
+            return;
+
+        var raw = new TrackPoint(
+            Timestamp: DateTimeOffset.UtcNow,
+            Latitude: location.Latitude,
+            Longitude: location.Longitude,
+            AccuracyMeters: location.Accuracy,
+            SpeedMps: location.Speed
+        );
+
+        if (TrackingCoordinator.Instance.TryAcceptRawPoint(raw, out _))
+        {
+            var snapshot = TrackingCoordinator.Instance.GetSnapshot();
+            UpdateNotification(snapshot.TotalPointCount);
+        }
+    }
+    
     private void StopTrackingLoop()
     {
         _cts?.Cancel();

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="DrivingSchoolApp.Pages.SavedRoutesPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Saved routes"
+    BackgroundColor="{StaticResource PageBackground}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem
+            x:Name="EditToolbarItem"
+            Text="Edit"
+            Order="Primary"
+            Clicked="EditToolbarItem_Clicked" />
+    </ContentPage.ToolbarItems>
+
+    <CollectionView
+        x:Name="RoutesCollectionView"
+        SelectionMode="None"
+        Margin="0,8,0,0">
+
+        <CollectionView.EmptyView>
+            <VerticalStackLayout Padding="24" Spacing="8">
+                <Label
+                    Text="No saved routes yet"
+                    FontSize="18"
+                    FontAttributes="Bold"
+                    HorizontalTextAlignment="Center"
+                    TextColor="{StaticResource Black}" />
+                <Label
+                    Text="End a route from the live screen and it will appear here."
+                    FontSize="13"
+                    HorizontalTextAlignment="Center"
+                    TextColor="{StaticResource Gray600}" />
+            </VerticalStackLayout>
+        </CollectionView.EmptyView>
+
+        <CollectionView.ItemTemplate>
+            <DataTemplate>
+                <Border
+                    Margin="16,8,16,0"
+                    Padding="14"
+                    Stroke="{StaticResource InputBorder}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 18"
+                    BackgroundColor="{StaticResource White}"
+                    Opacity="{Binding RowOpacity}">
+
+                    <Border.Triggers>
+                        <DataTrigger
+                            TargetType="Border"
+                            Binding="{Binding IsSelected}"
+                            Value="True">
+                            <Setter Property="BackgroundColor" Value="#E9EEF8" />
+                            <Setter Property="Stroke" Value="{StaticResource Primary}" />
+                        </DataTrigger>
+                    </Border.Triggers>
+
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                        <Border
+                            WidthRequest="22"
+                            HeightRequest="22"
+                            VerticalOptions="Center"
+                            IsVisible="{Binding IsEditing}"
+                            Stroke="{StaticResource Gray500}"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 999"
+                            BackgroundColor="{StaticResource White}">
+
+                            <Border.Triggers>
+                                <DataTrigger
+                                    TargetType="Border"
+                                    Binding="{Binding IsSelected}"
+                                    Value="True">
+                                    <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                    <Setter Property="Stroke" Value="{StaticResource Primary}" />
+                                </DataTrigger>
+                            </Border.Triggers>
+                        </Border>
+
+                        <VerticalStackLayout
+                            Grid.Column="1"
+                            Spacing="4">
+                            <Label
+                                Text="{Binding Title}"
+                                FontSize="16"
+                                FontAttributes="Bold"
+                                TextColor="{StaticResource Black}" />
+
+                            <Label
+                                Text="{Binding Subtitle}"
+                                FontSize="13"
+                                TextColor="{StaticResource Gray600}" />
+
+                            <Label
+                                Text="{Binding StatusText}"
+                                IsVisible="{Binding ShowStatus}"
+                                FontSize="12"
+                                FontAttributes="Bold"
+                                TextColor="{Binding StatusColor}" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="RouteItem_Tapped" />
+                    </Border.GestureRecognizers>
+                </Border>
+            </DataTemplate>
+        </CollectionView.ItemTemplate>
+    </CollectionView>
+</ContentPage>
