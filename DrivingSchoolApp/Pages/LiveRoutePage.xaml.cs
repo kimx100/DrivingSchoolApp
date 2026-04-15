@@ -1,4 +1,5 @@
 using System.Linq;
+using DrivingSchoolApp.Localization;
 using DrivingSchoolApp.Models;
 using DrivingSchoolApp.Services;
 using DrivingSchoolApp.Services.Tracking;
@@ -106,7 +107,7 @@ public partial class LiveRoutePage : ContentPage
     }
     catch
     {
-        // ignore cached-location failures
+        // ignore cache location failures
     }
 }
 
@@ -119,7 +120,7 @@ private async Task TryPrimeFirstRoutePointAsync()
             return;
 
         var location = await Geolocation.Default.GetLocationAsync(
-            new GeolocationRequest(GeolocationAccuracy.Best, TimeSpan.FromSeconds(8)));
+            new GeolocationRequest(GeolocationAccuracy.High, TimeSpan.FromSeconds(4)));
 
         if (location is null)
             return;
@@ -135,7 +136,7 @@ private async Task TryPrimeFirstRoutePointAsync()
             SpeedMps: location.Speed
         );
 
-        if (_tracking.TryAcceptRawPoint(raw, out _))
+        if (_tracking.TryAcceptRawPoint(raw, out _, allowQuickFirstPoint: true))
             RefreshFromCoordinator();
     }
     catch
@@ -190,7 +191,7 @@ private void ZoomToRadius(double latitude, double longitude, double radiusMeters
         _isTouchingMap = false;
     }
 
-    private async void StartButton_Clicked(object sender, EventArgs e)
+    private async void StartButton_Clicked(object? sender, EventArgs e)
     {
         var snapshotBefore = _tracking.GetSnapshot();
 
@@ -200,7 +201,7 @@ private void ZoomToRadius(double latitude, double longitude, double radiusMeters
         var locationStatus = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
         if (locationStatus != PermissionStatus.Granted)
         {
-            await DisplayAlert("Location required", "Location permission is needed to start route tracking.", "OK");
+            await DisplayAlertAsync(AppText.LiveLocationRequiredTitle, AppText.LiveLocationRequiredMessage, AppText.CommonOk);
             return;
         }
 
@@ -225,7 +226,7 @@ private void ZoomToRadius(double latitude, double longitude, double radiusMeters
             else
                 _tracking.PauseSession();
 
-            await DisplayAlert("Tracking error", "Could not start background tracking.", "OK");
+            await DisplayAlertAsync(AppText.LiveTrackingErrorTitle, AppText.LiveTrackingErrorMessage, AppText.CommonOk);
             return;
         }
 
@@ -238,7 +239,7 @@ private void ZoomToRadius(double latitude, double longitude, double radiusMeters
         await MaybeShowBackgroundTrackingPromptAsync();
     }
 
-    private async void StopButton_Clicked(object sender, EventArgs e)
+    private async void StopButton_Clicked(object? sender, EventArgs e)
     {
         var snapshot = _tracking.GetSnapshot();
         if (!snapshot.IsTracking)
@@ -250,17 +251,17 @@ private void ZoomToRadius(double latitude, double longitude, double radiusMeters
         RefreshFromCoordinator();
     }
 
-    private async void EndButton_Clicked(object sender, EventArgs e)
+    private async void EndButton_Clicked(object? sender, EventArgs e)
     {
         var snapshot = _tracking.GetSnapshot();
         if (!snapshot.HasActiveSession)
             return;
 
-        var confirmed = await DisplayAlert(
-            "End route?",
-            "This will finalize and save the current route.",
-            "End route",
-            "Cancel");
+        var confirmed = await DisplayAlertAsync(
+            AppText.LiveEndRouteTitle,
+            AppText.LiveEndRouteMessage,
+            AppText.LiveEndRouteConfirm,
+            AppText.CommonCancel);
 
         if (!confirmed)
             return;
@@ -270,9 +271,6 @@ private void ZoomToRadius(double latitude, double longitude, double radiusMeters
 
         var savedSession = await _tracking.EndAndSaveAsync();
 
-        if (savedSession is not null)
-            await RouteSnapBackgroundProcessor.EnqueueAsync(savedSession.Id);
-
         _autoFollow = true;
         RecenterButton.IsVisible = false;
         RouteMapView.MyLocationFollow = false;
@@ -280,19 +278,25 @@ private void ZoomToRadius(double latitude, double longitude, double radiusMeters
 
         ClearRouteVisuals();
         RefreshFromCoordinator();
+
+        if (savedSession is not null)
+        {
+            await Shell.Current.GoToAsync(
+                $"{nameof(RouteConfirmationPage)}?sessionId={Uri.EscapeDataString(savedSession.Id)}");
+        }
     }
 
-    private async void ResetButton_Clicked(object sender, EventArgs e)
+    private async void ResetButton_Clicked(object? sender, EventArgs e)
     {
         var snapshot = _tracking.GetSnapshot();
         if (!snapshot.HasActiveSession)
             return;
 
-        var confirmed = await DisplayAlert(
-            "Reset route?",
-            "This will discard the current route and clear all collected points.",
-            "Reset route",
-            "Cancel");
+        var confirmed = await DisplayAlertAsync(
+            AppText.LiveResetRouteTitle,
+            AppText.LiveResetRouteMessage,
+            AppText.LiveResetRouteConfirm,
+            AppText.CommonCancel);
 
         if (!confirmed)
             return;
@@ -311,7 +315,7 @@ private void ZoomToRadius(double latitude, double longitude, double radiusMeters
         RefreshFromCoordinator();
     }
 
-    private void RecenterButton_Clicked(object sender, EventArgs e)
+    private void RecenterButton_Clicked(object? sender, EventArgs e)
     {
         _autoFollow = true;
         RouteMapView.MyLocationFollow = true;
@@ -363,7 +367,7 @@ private void ZoomToRadius(double latitude, double longitude, double radiusMeters
     {
         HeroElapsedLabel.Text = FormatElapsed(snapshot.Elapsed);
         StartButton.IsEnabled = !snapshot.IsTracking;
-        StartButton.Text = snapshot.IsPaused ? "Resume" : "Start";
+        StartButton.Text = snapshot.IsPaused ? AppText.LiveResumeButton : AppText.LiveStartButton;
         StopButton.IsEnabled = snapshot.IsTracking;
         EndButton.IsEnabled = snapshot.HasActiveSession;
         ResetButton.IsEnabled = snapshot.HasActiveSession;
@@ -402,7 +406,7 @@ private void ZoomToRadius(double latitude, double longitude, double radiusMeters
         {
             var line = new Polyline
             {
-                StrokeWidth = 7,
+                StrokeWidth = 6,
                 StrokeColor = Microsoft.Maui.Graphics.Color.FromArgb("#2F6FD6")
             };
 
@@ -416,7 +420,7 @@ private void ZoomToRadius(double latitude, double longitude, double radiusMeters
 
         RouteMapView.Pins.Add(new Pin
         {
-            Label = "Start",
+            Label = AppText.RouteDetailStartPin,
             Position = new Position(first.Latitude, first.Longitude)
         });
     }
@@ -637,13 +641,13 @@ private void ZoomToRadius(double latitude, double longitude, double radiusMeters
 
         Preferences.Set(BackgroundPromptKey, true);
 
-        var choice = await DisplayActionSheet(
-            "For better route continuity when the screen turns off, open app settings and allow background location if your phone offers that option.",
-            "Not now",
+        var choice = await DisplayActionSheetAsync(
+            AppText.LiveBackgroundPrompt,
+            AppText.LiveBackgroundPromptLater,
             null,
-            "Open settings");
+            AppText.LiveBackgroundPromptOpenSettings);
 
-        if (choice == "Open settings")
+        if (choice == AppText.LiveBackgroundPromptOpenSettings)
         {
             try
             {

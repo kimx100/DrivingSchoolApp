@@ -3,6 +3,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using DrivingSchoolApp.Localization;
 
 namespace DrivingSchoolApp.Pages;
 
@@ -43,11 +44,11 @@ internal sealed class LogInViewModel : BindableObject
     {
         if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
         {
-            await DisplayAlertAsync("Missing information", "Please provide both email and password.", "OK");
+            await DisplayAlertAsync(AppText.LoginMissingInfoTitle, AppText.LoginMissingInfoMessage, AppText.CommonOk);
             return;
         }
 
-        await DisplayAlertAsync("Success", "You are ready to jump into the app.", "Great");
+        await DisplayAlertAsync(AppText.LoginSuccessTitle, AppText.LoginSuccessMessage, AppText.LoginSuccessButton);
     }
 
     private static Task DisplayAlertAsync(string title, string message, string cancel)

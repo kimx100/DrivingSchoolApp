@@ -1,5 +1,6 @@
 using System.Linq;
 using DrivingSchoolApp.Models;
+using DrivingSchoolApp.Services;
 using Microsoft.Maui.Storage;
 
 namespace DrivingSchoolApp.Services.Tracking;
@@ -31,17 +32,6 @@ public sealed class TrackingCoordinator
         lock (_gate)
         {
             return BuildSnapshotLocked();
-        }
-    }
-
-    public IReadOnlyList<TrackPoint> GetRecentPointsNewestFirst(int maxCount)
-    {
-        lock (_gate)
-        {
-            return _allPoints
-                .OrderByDescending(p => p.Timestamp)
-                .Take(maxCount)
-                .ToList();
         }
     }
 
@@ -105,7 +95,7 @@ public sealed class TrackingCoordinator
         return true;
     }
 
-    public bool TryAcceptRawPoint(TrackPoint raw, out TrackPoint processed)
+    public bool TryAcceptRawPoint(TrackPoint raw, out TrackPoint processed, bool allowQuickFirstPoint = false)
     {
         processed = raw;
 
@@ -117,7 +107,7 @@ public sealed class TrackingCoordinator
             if (!_isTracking)
                 return false;
 
-            if (!_processor.TryProcess(raw, out accepted))
+            if (!_processor.TryProcess(raw, out accepted, allowQuickFirstPoint))
                 return false;
 
             _allPoints.Add(accepted);
@@ -158,6 +148,8 @@ public sealed class TrackingCoordinator
                 {
                     StartedAt = _sessionStartedAt ?? ordered.First().Timestamp,
                     EndedAt = endedAt,
+                    TotalDistanceMeters = RouteSessionMetrics.CalculateDistanceMeters(ordered),
+                    IsFinalized = false,
                     Points = ordered
                 };
             }

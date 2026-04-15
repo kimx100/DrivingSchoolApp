@@ -41,6 +41,20 @@
     <Color x:Key="LinkText">#6F9FE8</Color>
     <Color x:Key="ShadowColor">#18000000</Color>
 
+    <!-- Semantic UI colors used where pages override the default control styles -->
+    <Color x:Key="PrimaryTextLight">#111111</Color>
+    <Color x:Key="PrimaryTextDark">#FFFFFF</Color>
+    <Color x:Key="SecondaryTextLight">#5F5F5F</Color>
+    <Color x:Key="SecondaryTextDark">#E2E2E2</Color>
+    <Color x:Key="SurfaceLight">#FFFFFF</Color>
+    <Color x:Key="SurfaceDark">#2B2B2B</Color>
+    <Color x:Key="SelectedSurfaceLight">#E9EEF8</Color>
+    <Color x:Key="SelectedSurfaceDark">#245FC0</Color>
+    <Color x:Key="ChromeBackground">#2F6FD6</Color>
+    <Color x:Key="ChromeForeground">#FFFFFF</Color>
+    <Color x:Key="ChromeUnselected">#DCE7FB</Color>
+    <Color x:Key="ActiveRouteChromeBackground">#2F9B63</Color>
+
     <!-- Brushes -->
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}" />
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}" />

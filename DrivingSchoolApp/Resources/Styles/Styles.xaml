@@ -401,29 +401,29 @@
     </Style>
 
     <Style TargetType="Shell" ApplyToDerivedTypes="True">
-        <Setter Property="Shell.BackgroundColor" Value="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}" />
-        <Setter Property="Shell.ForegroundColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
-        <Setter Property="Shell.TitleColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
-        <Setter Property="Shell.DisabledColor" Value="{AppThemeBinding Light={StaticResource Gray400}, Dark={StaticResource Gray700}}" />
-        <Setter Property="Shell.UnselectedColor" Value="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray500}}" />
+        <Setter Property="Shell.BackgroundColor" Value="{StaticResource ChromeBackground}" />
+        <Setter Property="Shell.ForegroundColor" Value="{StaticResource ChromeForeground}" />
+        <Setter Property="Shell.TitleColor" Value="{StaticResource ChromeForeground}" />
+        <Setter Property="Shell.DisabledColor" Value="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray700}}" />
+        <Setter Property="Shell.UnselectedColor" Value="{StaticResource ChromeUnselected}" />
         <Setter Property="Shell.NavBarHasShadow" Value="False" />
-        <Setter Property="Shell.TabBarBackgroundColor" Value="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Black}}" />
-        <Setter Property="Shell.TabBarForegroundColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
-        <Setter Property="Shell.TabBarTitleColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
-        <Setter Property="Shell.TabBarUnselectedColor" Value="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray500}}" />
+        <Setter Property="Shell.TabBarBackgroundColor" Value="{StaticResource ChromeBackground}" />
+        <Setter Property="Shell.TabBarForegroundColor" Value="{StaticResource ChromeForeground}" />
+        <Setter Property="Shell.TabBarTitleColor" Value="{StaticResource ChromeForeground}" />
+        <Setter Property="Shell.TabBarUnselectedColor" Value="{StaticResource ChromeUnselected}" />
     </Style>
 
     <Style TargetType="NavigationPage">
-        <Setter Property="BarBackgroundColor" Value="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}" />
-        <Setter Property="BarTextColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
-        <Setter Property="IconColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
+        <Setter Property="BarBackgroundColor" Value="{StaticResource ChromeBackground}" />
+        <Setter Property="BarTextColor" Value="{StaticResource ChromeForeground}" />
+        <Setter Property="IconColor" Value="{StaticResource ChromeForeground}" />
     </Style>
 
     <Style TargetType="TabbedPage">
-        <Setter Property="BarBackgroundColor" Value="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}" />
-        <Setter Property="BarTextColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}" />
-        <Setter Property="UnselectedTabColor" Value="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray500}}" />
-        <Setter Property="SelectedTabColor" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource White}}" />
+        <Setter Property="BarBackgroundColor" Value="{StaticResource ChromeBackground}" />
+        <Setter Property="BarTextColor" Value="{StaticResource ChromeForeground}" />
+        <Setter Property="UnselectedTabColor" Value="{StaticResource ChromeUnselected}" />
+        <Setter Property="SelectedTabColor" Value="{StaticResource ChromeForeground}" />
     </Style>
 
 </ResourceDictionary>

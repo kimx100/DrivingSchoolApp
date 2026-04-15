@@ -4,18 +4,19 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:mapsui="clr-namespace:Mapsui.UI.Maui;assembly=Mapsui.UI.Maui"
-    Title="Saved route"
+    xmlns:text="clr-namespace:DrivingSchoolApp.Localization"
+    Title="{x:Static text:AppText.RouteDetailPageTitle}"
     BackgroundColor="{StaticResource PageBackground}">
 
     <ContentPage.ToolbarItems>
         <ToolbarItem
             x:Name="SnapToolbarItem"
-            Text="Snap"
+            Text="{x:Static text:AppText.RouteDetailSnapButton}"
             Order="Primary"
             Clicked="SnapToolbarItem_Clicked" />
 
         <ToolbarItem
-            Text="Delete"
+            Text="{x:Static text:AppText.RouteDetailDeleteButton}"
             Order="Primary"
             Clicked="DeleteToolbarItem_Clicked" />
     </ContentPage.ToolbarItems>
@@ -50,7 +51,7 @@
 
                     <Label
                         x:Name="LoadingMessageLabel"
-                        Text="Loading route..."
+                        Text="{x:Static text:AppText.RouteDetailLoadingMessage}"
                         FontSize="16"
                         FontAttributes="Bold"
                         HorizontalTextAlignment="Center"

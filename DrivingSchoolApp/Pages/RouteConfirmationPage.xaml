@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="DrivingSchoolApp.Pages.RouteConfirmationPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:mapsui="clr-namespace:Mapsui.UI.Maui;assembly=Mapsui.UI.Maui"
+    xmlns:text="clr-namespace:DrivingSchoolApp.Localization"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    Title="{x:Static text:AppText.RouteReviewPageTitle}"
+    BackgroundColor="{StaticResource PageBackground}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+            <Border Padding="16">
+                <VerticalStackLayout Spacing="12">
+                    <Label
+                        Text="{x:Static text:AppText.RouteReviewSummaryHeader}"
+                        FontSize="18"
+                        FontAttributes="Bold" />
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="10">
+                        <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="2">
+                            <Label Text="{x:Static text:AppText.RouteReviewStartLabel}" FontSize="12" TextColor="{StaticResource Gray600}" />
+                            <Label Text="{Binding StartText}" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="2">
+                            <Label Text="{x:Static text:AppText.RouteReviewEndLabel}" FontSize="12" TextColor="{StaticResource Gray600}" />
+                            <Label Text="{Binding EndText}" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="2">
+                            <Label Text="{x:Static text:AppText.RouteReviewDurationLabel}" FontSize="12" TextColor="{StaticResource Gray600}" />
+                            <Label Text="{Binding DurationText}" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="2">
+                            <Label Text="{x:Static text:AppText.RouteReviewDistanceLabel}" FontSize="12" TextColor="{StaticResource Gray600}" />
+                            <Label Text="{Binding DistanceText}" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Padding="16">
+                <VerticalStackLayout Spacing="12">
+                    <Label
+                        Text="{x:Static text:AppText.RouteReviewPreviewHeader}"
+                        FontSize="18"
+                        FontAttributes="Bold" />
+
+                    <mapsui:MapView
+                        x:Name="RouteMapView"
+                        HeightRequest="220"
+                        InputTransparent="True"
+                        IsZoomButtonVisible="False"
+                        IsMyLocationButtonVisible="False" />
+
+                    <Label
+                        Text="{x:Static text:AppText.RouteReviewPreviewMessage}"
+                        FontSize="12"
+                        TextColor="{StaticResource Gray600}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Padding="16">
+                <VerticalStackLayout Spacing="12">
+                    <Label
+                        Text="{x:Static text:AppText.RouteReviewPeopleHeader}"
+                        FontSize="18"
+                        FontAttributes="Bold" />
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="{x:Static text:AppText.RouteReviewStudentLabel}" FontSize="12" TextColor="{StaticResource Gray600}" />
+                        <Entry
+                            x:Name="StudentNameEntry"
+                            Text="{Binding StudentName}"
+                            Placeholder="{x:Static text:AppText.RouteReviewStudentPlaceholder}"
+                            TextChanged="StudentNameEntry_TextChanged" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="{x:Static text:AppText.RouteReviewInstructorLabel}" FontSize="12" TextColor="{StaticResource Gray600}" />
+                        <Entry
+                            Text="{Binding InstructorName}"
+                            Placeholder="{x:Static text:AppText.RouteReviewInstructorPlaceholder}" />
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Padding="16">
+                <VerticalStackLayout Spacing="12">
+                    <Label
+                        Text="{x:Static text:AppText.RouteReviewSkillsHeader}"
+                        FontSize="18"
+                        FontAttributes="Bold" />
+
+                    <Label
+                        Text="{Binding StudentProgressText}"
+                        FontSize="13"
+                        TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}" />
+
+                    <CollectionView
+                        ItemsSource="{Binding LessonItems}"
+                        SelectionMode="None">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout
+                                Orientation="Vertical"
+                                ItemSpacing="10" />
+                        </CollectionView.ItemsLayout>
+
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border
+                                    Padding="12"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}"
+                                    StrokeThickness="1">
+                                    <Border.Triggers>
+                                        <DataTrigger
+                                            TargetType="Border"
+                                            Binding="{Binding IsSelected}"
+                                            Value="True">
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource SelectedSurfaceLight}, Dark={StaticResource SelectedSurfaceDark}}" />
+                                            <Setter Property="Stroke" Value="{StaticResource Primary}" />
+                                        </DataTrigger>
+                                    </Border.Triggers>
+
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                        <CheckBox
+                                            IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                            VerticalOptions="Center" />
+
+                                        <Label
+                                            Grid.Column="1"
+                                            Text="{Binding DisplayText}"
+                                            VerticalOptions="Center"
+                                            TextColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}"
+                                            FontAttributes="Bold" />
+                                    </Grid>
+
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="LessonItemRow_Tapped" />
+                                    </Border.GestureRecognizers>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <Label
+                        Text="{x:Static text:AppText.RouteReviewAllCompletedMessage}"
+                        IsVisible="{Binding ShowNoRemainingItemsMessage}"
+                        FontSize="13"
+                        TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Padding="16">
+                <VerticalStackLayout Spacing="16">
+                    <Label
+                        Text="{x:Static text:AppText.RouteReviewInstructorSignoffHeader}"
+                        FontSize="18"
+                        FontAttributes="Bold" />
+
+                    <toolkit:DrawingView
+                        x:Name="InstructorSignaturePad"
+                        HeightRequest="180"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}"
+                        IsMultiLineModeEnabled="True"
+                        ShouldClearOnFinish="False"
+                        LineColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}"
+                        LineWidth="4" />
+
+                    <Button
+                        Text="{x:Static text:AppText.RouteReviewClearInstructorSignature}"
+                        Clicked="ClearInstructorSignatureButton_Clicked"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray700}}"
+                        TextColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}" />
+
+                    <Label
+                        x:Name="InstructorSignatureStatusLabel"
+                        Text="{x:Static text:AppText.RouteReviewInstructorSignaturePrompt}"
+                        FontSize="12"
+                        TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Padding="16">
+                <VerticalStackLayout Spacing="16">
+                    <Label
+                        Text="{x:Static text:AppText.RouteReviewStudentSignoffHeader}"
+                        FontSize="18"
+                        FontAttributes="Bold" />
+
+                    <toolkit:DrawingView
+                        x:Name="StudentSignaturePad"
+                        HeightRequest="180"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}"
+                        IsMultiLineModeEnabled="True"
+                        ShouldClearOnFinish="False"
+                        LineColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}"
+                        LineWidth="4" />
+
+                    <Button
+                        Text="{x:Static text:AppText.RouteReviewClearStudentSignature}"
+                        Clicked="ClearStudentSignatureButton_Clicked"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray700}}"
+                        TextColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}" />
+
+                    <Label
+                        x:Name="StudentSignatureStatusLabel"
+                        Text="{x:Static text:AppText.RouteReviewStudentSignaturePrompt}"
+                        FontSize="12"
+                        TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Button
+                Text="{x:Static text:AppText.RouteReviewFinalizeButton}"
+                Clicked="FinalizeLessonButton_Clicked" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

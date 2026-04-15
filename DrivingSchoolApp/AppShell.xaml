@@ -4,19 +4,23 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:pages="clr-namespace:DrivingSchoolApp.Pages"
+    xmlns:text="clr-namespace:DrivingSchoolApp.Localization"
     Title="DrivingSchoolApp">
 
     <TabBar>
         <ShellContent
-            Title="Route"
+            Route="live-route"
+            Title="{x:Static text:AppText.ShellRouteTabTitle}"
             ContentTemplate="{DataTemplate pages:LiveRoutePage}" />
 
         <ShellContent
-            Title="Saved"
+            Route="saved-routes"
+            Title="{x:Static text:AppText.ShellSavedTabTitle}"
             ContentTemplate="{DataTemplate pages:SavedRoutesPage}" />
 
         <ShellContent
-            Title="Login"
+            Route="login"
+            Title="{x:Static text:AppText.ShellLoginTabTitle}"
             ContentTemplate="{DataTemplate pages:LogInPage}" />
     </TabBar>
 </Shell>

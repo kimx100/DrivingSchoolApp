@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using DrivingSchoolApp.Localization;
+using DrivingSchoolApp.Services;
 using Microsoft.Maui.Graphics;
 
 namespace DrivingSchoolApp.Models;
@@ -18,18 +20,24 @@ public sealed class SavedRouteListItem : INotifyPropertyChanged
     public DateTimeOffset StartedAt { get; }
     public DateTimeOffset EndedAt { get; }
     public int PointCount { get; }
+    public string StudentName { get; }
+    public bool IsFinalized { get; }
 
-    public string Title => StartedAt.LocalDateTime.ToString("dd MMM yyyy · HH:mm");
+    public string Title => StartedAt.LocalDateTime.ToString("dd MMM yyyy HH:mm");
 
     public string Subtitle
     {
         get
         {
             var duration = EndedAt - StartedAt;
-            if (duration < TimeSpan.Zero)
-                duration = TimeSpan.Zero;
+            var studentPart = string.IsNullOrWhiteSpace(StudentName)
+                ? AppText.SavedRouteNoStudentAssigned
+                : StudentName;
 
-            return $"{FormatDuration(duration)} · {PointCount} points";
+            return AppText.FormatSavedRouteSubtitle(
+                studentPart,
+                RouteSessionMetrics.FormatDuration(duration),
+                PointCount);
         }
     }
 
@@ -75,12 +83,20 @@ public sealed class SavedRouteListItem : INotifyPropertyChanged
         set => SetField(ref _rowOpacity, value);
     }
 
-    public SavedRouteListItem(string sessionId, DateTimeOffset startedAt, DateTimeOffset endedAt, int pointCount)
+    public SavedRouteListItem(
+        string sessionId,
+        DateTimeOffset startedAt,
+        DateTimeOffset endedAt,
+        int pointCount,
+        string studentName,
+        bool isFinalized)
     {
         SessionId = sessionId;
         StartedAt = startedAt;
         EndedAt = endedAt;
         PointCount = pointCount;
+        StudentName = studentName;
+        IsFinalized = isFinalized;
     }
 
     public static SavedRouteListItem FromSession(RouteSession session)
@@ -91,42 +107,47 @@ public sealed class SavedRouteListItem : INotifyPropertyChanged
             session.Id,
             session.StartedAt,
             session.EndedAt,
-            pointCount);
+            pointCount,
+            session.StudentName,
+            session.IsFinalized);
     }
 
-    public void ApplySnapState(RouteSnapState? state)
+    public void ApplyStatus(RouteSnapState? state)
     {
-        if (state is null)
+        if (!IsFinalized)
         {
             ShowStatus = true;
-            StatusText = "Processing";
-            StatusColor = Colors.Gray;
-            CanOpen = false;
-            RowOpacity = 0.55;
+            StatusText = AppText.SavedRouteStatusNeedsSignOff;
+            StatusColor = Colors.DarkOrange;
+            CanOpen = true;
+            RowOpacity = 1.0;
+            return;
+        }
+
+        if (state is null)
+        {
+            ShowStatus = false;
+            StatusText = string.Empty;
+            StatusColor = Colors.Transparent;
+            CanOpen = true;
+            RowOpacity = 1.0;
             return;
         }
 
         switch (state.Status)
         {
             case RouteSnapWorkStatus.Pending:
-                ShowStatus = true;
-                StatusText = "Processing";
-                StatusColor = Colors.Gray;
-                CanOpen = false;
-                RowOpacity = 0.55;
-                break;
-
             case RouteSnapWorkStatus.Processing:
                 ShowStatus = true;
-                StatusText = "Processing";
+                StatusText = AppText.SavedRouteStatusMapProcessing;
                 StatusColor = Colors.Gray;
-                CanOpen = false;
-                RowOpacity = 0.55;
+                CanOpen = true;
+                RowOpacity = 1.0;
                 break;
 
             case RouteSnapWorkStatus.Failed:
                 ShowStatus = true;
-                StatusText = "Snap failed";
+                StatusText = AppText.SavedRouteStatusSnapFailed;
                 StatusColor = Colors.Red;
                 CanOpen = true;
                 RowOpacity = 1.0;
@@ -134,7 +155,7 @@ public sealed class SavedRouteListItem : INotifyPropertyChanged
 
             case RouteSnapWorkStatus.ReadyToView:
                 ShowStatus = true;
-                StatusText = "Ready to view";
+                StatusText = AppText.SavedRouteStatusReadyToView;
                 StatusColor = Color.FromArgb("#2F6FD6");
                 CanOpen = true;
                 RowOpacity = 1.0;
@@ -160,13 +181,5 @@ public sealed class SavedRouteListItem : INotifyPropertyChanged
 
         field = value;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
-    private static string FormatDuration(TimeSpan duration)
-    {
-        if (duration.TotalHours >= 1)
-            return duration.ToString(@"hh\:mm\:ss");
-
-        return duration.ToString(@"mm\:ss");
     }
 }
