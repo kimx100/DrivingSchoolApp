@@ -85,7 +85,7 @@ internal sealed class LogInViewModel : BindableObject
         request.AddBody(new LoginDto(Username, Password));
         
         var response = await client.ExecuteAsync<JwtTokenDto>(request);
-
+ 
         if(!response.IsSuccessful)
             await DisplayAlertAsync("Login", response.StatusCode.ToString(), "OK");
         else

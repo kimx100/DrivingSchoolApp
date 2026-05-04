@@ -15,8 +15,5 @@
             Title="Saved"
             ContentTemplate="{DataTemplate pages:SavedRoutesPage}" />
 
-        <ShellContent
-            Title="Theory"
-            ContentTemplate="{DataTemplate pages:TheoryLessonPage}" />
     </TabBar>
 </Shell>
