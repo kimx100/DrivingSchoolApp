@@ -3,6 +3,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using DrivingSchoolApp.DTOs.Common;
+using RestSharp;
 
 namespace DrivingSchoolApp.Pages;
 
@@ -77,8 +79,19 @@ internal sealed class LogInViewModel : BindableObject
             await DisplayAlertAsync("Missing information", "Please provide both email and password.", "OK");
             return;
         }
+        
+        var client = new RestClient("http://10.115.248.247:5259");
+        var request = new RestRequest("/auth/login/instructor", Method.Post);
+        request.AddBody(new LoginDto(Username, Password));
+        
+        var response = await client.ExecuteAsync<JwtTokenDto>(request);
 
-        await DisplayAlertAsync("Login", "Login API is not connected yet.", "OK");
+        if(!response.IsSuccessful)
+            await DisplayAlertAsync("Login", response.StatusCode.ToString(), "OK");
+        else
+            await DisplayAlertAsync("Login", "Login Successful", "OK");
+
+        
     }
 
     private static Task DisplayAlertAsync(string title, string message, string cancel)
@@ -86,7 +99,10 @@ internal sealed class LogInViewModel : BindableObject
         var page = Application.Current?.Windows.FirstOrDefault()?.Page;
         return page?.DisplayAlertAsync(title, message, cancel) ?? Task.CompletedTask;
     }
-
+// http://10.0.2.2
+//port:5259
+//William47@gmail.com
+//password: test1234
     private bool SetProperty<T>(ref T backingStore, T value, [CallerMemberName] string? propertyName = null)
     {
         if (EqualityComparer<T>.Default.Equals(backingStore, value))
