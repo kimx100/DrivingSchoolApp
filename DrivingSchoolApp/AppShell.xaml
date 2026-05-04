@@ -14,9 +14,5 @@
         <ShellContent
             Title="Saved"
             ContentTemplate="{DataTemplate pages:SavedRoutesPage}" />
-
-        <ShellContent
-            Title="Login"
-            ContentTemplate="{DataTemplate pages:LogInPage}" />
     </TabBar>
 </Shell>

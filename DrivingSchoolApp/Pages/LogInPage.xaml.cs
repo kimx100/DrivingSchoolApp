@@ -12,7 +12,38 @@ public partial class LogInPage : ContentPage
     {
         InitializeComponent();
         BindingContext = new LogInViewModel();
+
+#if DEBUG
+        AddDebugSkipButton();
+#endif
     }
+
+#if DEBUG
+    private void AddDebugSkipButton()
+    {
+        var skipButton = new Button
+        {
+            Text = "Continue without login",
+            CornerRadius = 12
+        };
+
+        skipButton.SetDynamicResource(Button.BackgroundColorProperty, "Gray300");
+        skipButton.SetDynamicResource(Button.TextColorProperty, "Black");
+        skipButton.Clicked += ContinueWithoutLoginButton_Clicked;
+
+        LoginFormLayout.Children.Add(skipButton);
+    }
+
+    private static void ContinueWithoutLoginButton_Clicked(object? sender, EventArgs e)
+    {
+        var window = Application.Current?.Windows.FirstOrDefault();
+
+        if (window is not null)
+        {
+            window.Page = new global::DrivingSchoolApp.AppShell();
+        }
+    }
+#endif
 }
 
 internal sealed class LogInViewModel : BindableObject
@@ -47,7 +78,7 @@ internal sealed class LogInViewModel : BindableObject
             return;
         }
 
-        await DisplayAlertAsync("Success", "You are ready to jump into the app.", "Great");
+        await DisplayAlertAsync("Login", "Login API is not connected yet.", "OK");
     }
 
     private static Task DisplayAlertAsync(string title, string message, string cancel)

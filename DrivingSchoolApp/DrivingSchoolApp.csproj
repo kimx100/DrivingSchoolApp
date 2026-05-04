@@ -66,6 +66,8 @@
 
     <ItemGroup>
         <PackageReference Include="Mapsui.Maui" Version="5.0.2" />
+        <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.3.9" />
+        <PackageReference Include="RestSharp" Version="114.0.0" />
         <PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="3.119.2" />
     </ItemGroup>
 

@@ -25,7 +25,9 @@
                     Radius="18"
                     Opacity="0.35" />
             </Border.Shadow>
-            <VerticalStackLayout Spacing="16">
+            <VerticalStackLayout
+                x:Name="LoginFormLayout"
+                Spacing="16">
                 <Label Text="Log ind"
                        FontSize="28"
                        FontAttributes="Bold"
