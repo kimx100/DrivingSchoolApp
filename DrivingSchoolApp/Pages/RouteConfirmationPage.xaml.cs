@@ -3,6 +3,8 @@ using System.Linq;
 using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Maui.Core.Views;
 using CommunityToolkit.Maui.Views;
+using DrivingSchoolApp.DTOs.Instructor;
+using DrivingSchoolApp.DTOs.Student;
 using DrivingSchoolApp.Localization;
 using DrivingSchoolApp.Models;
 using DrivingSchoolApp.Services;
@@ -23,11 +25,15 @@ public partial class RouteConfirmationPage : ContentPage
     private const string CurrentInstructorNameKey = "CurrentInstructorName";
 
     private readonly LessonReviewViewModel _viewModel = new();
+    private readonly TheoryLessonStudentService _peopleService = new();
+    private readonly ObservableCollection<RouteStudentPickerItem> _studentPickerItems = new();
 
     private bool _mapInitialized;
     private string? _sessionId;
     private string? _loadedSessionId;
     private RouteSession? _session;
+    private InstructorDto? _instructor;
+    private RouteStudentPickerItem? _selectedStudent;
 
     public string? SessionId
     {
@@ -40,6 +46,7 @@ public partial class RouteConfirmationPage : ContentPage
         InitializeComponent();
 
         BindingContext = _viewModel;
+        StudentPicker.ItemsSource = _studentPickerItems;
 
         InstructorSignaturePad.Lines = new ObservableCollection<IDrawingLine>();
         StudentSignaturePad.Lines = new ObservableCollection<IDrawingLine>();
@@ -76,8 +83,9 @@ public partial class RouteConfirmationPage : ContentPage
         _viewModel.ApplySession(
             _session,
             Preferences.Get(CurrentStudentNameKey, string.Empty),
-            Preferences.Get(CurrentInstructorNameKey, string.Empty));
+            string.Empty);
 
+        await LoadInstructorAndStudentsAsync();
         await _viewModel.RefreshStudentProgressAsync();
 
         RestoreSignature(InstructorSignaturePad, _session.InstructorSignature);
@@ -131,13 +139,15 @@ public partial class RouteConfirmationPage : ContentPage
         RouteMapView.Pins.Add(new Pin
         {
             Label = AppText.RouteDetailStartPin,
-            Position = ordered.First()
+            Position = ordered.First(),
+            Scale = RouteMapViewportHelper.RouteEndpointPinScale
         });
 
         RouteMapView.Pins.Add(new Pin
         {
             Label = AppText.RouteDetailEndPin,
-            Position = ordered.Last()
+            Position = ordered.Last(),
+            Scale = RouteMapViewportHelper.RouteEndpointPinScale
         });
 
         ZoomToPositions(ordered);
@@ -145,41 +155,92 @@ public partial class RouteConfirmationPage : ContentPage
 
     private void ZoomToPositions(IReadOnlyList<Position> positions)
     {
-        if (RouteMapView.Map is null || positions.Count == 0)
-            return;
-
-        var world = positions
-            .Select(p => SphericalMercator.FromLonLat(p.Longitude, p.Latitude))
-            .ToList();
-
-        double minX = double.PositiveInfinity;
-        double minY = double.PositiveInfinity;
-        double maxX = double.NegativeInfinity;
-        double maxY = double.NegativeInfinity;
-
-        foreach (var point in world)
-        {
-            if (point.Item1 < minX) minX = point.Item1;
-            if (point.Item2 < minY) minY = point.Item2;
-            if (point.Item1 > maxX) maxX = point.Item1;
-            if (point.Item2 > maxY) maxY = point.Item2;
-        }
-
-        if (Math.Abs(maxX - minX) < 1 && Math.Abs(maxY - minY) < 1)
-        {
-            var padding = 100d;
-            minX -= padding;
-            minY -= padding;
-            maxX += padding;
-            maxY += padding;
-        }
-
-        RouteMapView.Map.Navigator.ZoomToBox(new MRect(minX, minY, maxX, maxY));
+        RouteMapViewportHelper.FitRoute(
+            RouteMapView,
+            positions,
+            debugSource: "RouteConfirmationPage Raw");
     }
 
-    private async void StudentNameEntry_TextChanged(object? sender, TextChangedEventArgs e)
+    private async void StudentPicker_SelectedIndexChanged(object? sender, EventArgs e)
     {
+        _selectedStudent = StudentPicker.SelectedItem as RouteStudentPickerItem;
+
+        if (_selectedStudent is not null)
+            _viewModel.StudentName = _selectedStudent.FullName;
+
         await _viewModel.RefreshStudentProgressAsync();
+    }
+
+    private async Task LoadInstructorAndStudentsAsync()
+    {
+        PeopleStatusLabel.Text = "Loading instructor and students...";
+        InstructorNameLabel.Text = "Loading instructor...";
+        StudentPicker.IsEnabled = false;
+        _studentPickerItems.Clear();
+        _instructor = null;
+        _selectedStudent = null;
+
+        try
+        {
+            var result = await _peopleService.GetCurrentInstructorWithStudentsAsync();
+            _instructor = result.Instructor;
+            var instructorName = FormatInstructorName(result.Instructor);
+
+            _viewModel.InstructorName = instructorName;
+            InstructorNameLabel.Text = $"Instructor: {instructorName}";
+
+            foreach (var student in OrderStudents(result.Students))
+                _studentPickerItems.Add(new RouteStudentPickerItem(student));
+
+            SelectInitialStudent();
+
+            StudentPicker.IsEnabled = _studentPickerItems.Count > 0;
+            PeopleStatusLabel.Text = _studentPickerItems.Count == 0
+                ? "No students found for this instructor's driving school."
+                : "Select the student who completed this route.";
+        }
+        catch (Exception ex)
+        {
+            _viewModel.InstructorName = string.Empty;
+            InstructorNameLabel.Text = "Instructor: Not loaded";
+            PeopleStatusLabel.Text = BuildPeopleLoadError(ex);
+            StudentPicker.IsEnabled = false;
+        }
+    }
+
+    private void SelectInitialStudent()
+    {
+        if (_studentPickerItems.Count == 0)
+            return;
+
+        RouteStudentPickerItem? match = null;
+
+        if (!string.IsNullOrWhiteSpace(_session?.StudentId))
+        {
+            match = _studentPickerItems.FirstOrDefault(x =>
+                string.Equals(x.Student.Id.ToString(), _session.StudentId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (match is null && !string.IsNullOrWhiteSpace(_viewModel.StudentName))
+        {
+            match = _studentPickerItems.FirstOrDefault(x =>
+                string.Equals(x.FullName, _viewModel.StudentName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (match is not null)
+            StudentPicker.SelectedItem = match;
+    }
+
+    private static string BuildPeopleLoadError(Exception exception)
+    {
+        if (exception is InvalidOperationException)
+            return exception.Message;
+
+#if DEBUG
+        return $"Could not load instructor/students. {exception.GetType().Name}: {exception.Message}";
+#else
+        return "Could not load instructor/students. Check that you are logged in and the API is reachable.";
+#endif
     }
 
     private void LessonItemRow_Tapped(object? sender, TappedEventArgs e)
@@ -226,12 +287,13 @@ public partial class RouteConfirmationPage : ContentPage
         if (_session is null)
             return;
 
-        var studentName = _viewModel.StudentName.Trim();
+        var selectedStudent = _selectedStudent;
+        var studentName = selectedStudent?.FullName ?? string.Empty;
         var instructorName = _viewModel.InstructorName.Trim();
 
-        if (string.IsNullOrWhiteSpace(studentName))
+        if (selectedStudent is null || string.IsNullOrWhiteSpace(studentName))
         {
-            await DisplayAlertAsync(AppText.RouteReviewMissingStudentTitle, AppText.RouteReviewMissingStudentMessage, AppText.CommonOk);
+            await DisplayAlertAsync(AppText.RouteReviewMissingStudentTitle, "Please select a student.", AppText.CommonOk);
             return;
         }
 
@@ -256,15 +318,16 @@ public partial class RouteConfirmationPage : ContentPage
         var finalizedAt = DateTimeOffset.UtcNow;
         var selectedItems = _viewModel.GetSelectedItemTypes();
 
-        var student = await StudentProgressStorage.SaveLessonCompletionAsync(
+        await StudentProgressStorage.SaveLessonCompletionAsync(
             studentName,
-            _session.StudentId,
+            selectedStudent.Student.Id.ToString(),
             _session.Id,
             selectedItems,
             finalizedAt);
 
-        _session.StudentId = student.Id;
-        _session.StudentName = student.FullName;
+        // TODO: Use instructor/student API ids when uploading finalized routes to the API.
+        _session.StudentId = selectedStudent.Student.Id.ToString();
+        _session.StudentName = studentName;
         _session.InstructorName = instructorName;
         _session.TotalDistanceMeters ??= RouteSessionMetrics.CalculateDistanceMeters(_session.Points);
         _session.CompletedItems = selectedItems
@@ -276,14 +339,14 @@ public partial class RouteConfirmationPage : ContentPage
             })
             .ToList();
         _session.InstructorSignature = BuildSignature(InstructorSignaturePad, instructorName, finalizedAt);
-        _session.StudentSignature = BuildSignature(StudentSignaturePad, student.FullName, finalizedAt);
+        _session.StudentSignature = BuildSignature(StudentSignaturePad, studentName, finalizedAt);
         _session.IsFinalized = true;
         _session.FinalizedAt = finalizedAt;
 
         await RouteStorage.SaveAsync(_session);
         await RouteSnapBackgroundProcessor.EnqueueAsync(_session.Id);
 
-        Preferences.Set(CurrentStudentNameKey, student.FullName);
+        Preferences.Set(CurrentStudentNameKey, studentName);
         Preferences.Set(CurrentInstructorNameKey, instructorName);
 
         await DisplayAlertAsync(AppText.RouteReviewFinalizedTitle, AppText.RouteReviewFinalizedMessage, AppText.CommonOk);
@@ -349,4 +412,21 @@ public partial class RouteConfirmationPage : ContentPage
 
         signaturePad.Lines = lines;
     }
+
+    private static List<StudentDto> OrderStudents(IEnumerable<StudentDto> students)
+    {
+        return students
+            .OrderBy(x => x.StudentName.FirstName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.StudentName.LastName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static string FormatInstructorName(InstructorDto instructor)
+        => $"{instructor.Name.FirstName} {instructor.Name.LastName}".Trim();
+}
+
+internal sealed class RouteStudentPickerItem(StudentDto student)
+{
+    public StudentDto Student { get; } = student;
+    public string FullName { get; } = $"{student.StudentName.FirstName} {student.StudentName.LastName}".Trim();
 }

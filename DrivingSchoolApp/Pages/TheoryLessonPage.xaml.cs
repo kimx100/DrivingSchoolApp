@@ -324,8 +324,8 @@ public partial class TheoryLessonPage : ContentPage
     private static List<StudentDto> OrderStudents(IEnumerable<StudentDto> students)
     {
         return students
-            .OrderBy(x => x.StudentName.LastName, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(x => x.StudentName.FirstName, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x.StudentName.FirstName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.StudentName.LastName, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 

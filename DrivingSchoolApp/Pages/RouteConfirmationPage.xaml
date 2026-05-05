@@ -72,19 +72,35 @@
 
                     <VerticalStackLayout Spacing="6">
                         <Label Text="{x:Static text:AppText.RouteReviewStudentLabel}" FontSize="12" TextColor="{StaticResource Gray600}" />
-                        <Entry
-                            x:Name="StudentNameEntry"
-                            Text="{Binding StudentName}"
-                            Placeholder="{x:Static text:AppText.RouteReviewStudentPlaceholder}"
-                            TextChanged="StudentNameEntry_TextChanged" />
+                        <Picker
+                            x:Name="StudentPicker"
+                            Title="Select student"
+                            ItemDisplayBinding="{Binding FullName}"
+                            SelectedIndexChanged="StudentPicker_SelectedIndexChanged"
+                            TextColor="{StaticResource Black}"
+                            TitleColor="{StaticResource Gray600}"
+                            BackgroundColor="{StaticResource White}" />
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="6">
                         <Label Text="{x:Static text:AppText.RouteReviewInstructorLabel}" FontSize="12" TextColor="{StaticResource Gray600}" />
-                        <Entry
-                            Text="{Binding InstructorName}"
-                            Placeholder="{x:Static text:AppText.RouteReviewInstructorPlaceholder}" />
+                        <Border
+                            Padding="12"
+                            BackgroundColor="{StaticResource White}"
+                            Stroke="{StaticResource InputBorder}"
+                            StrokeThickness="1">
+                            <Label
+                                x:Name="InstructorNameLabel"
+                                Text="Loading instructor..."
+                                FontAttributes="Bold"
+                                TextColor="{StaticResource Black}" />
+                        </Border>
                     </VerticalStackLayout>
+
+                    <Label
+                        x:Name="PeopleStatusLabel"
+                        FontSize="12"
+                        TextColor="{StaticResource Gray600}" />
                 </VerticalStackLayout>
             </Border>
 
