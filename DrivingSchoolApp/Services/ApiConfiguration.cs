@@ -2,8 +2,9 @@ namespace DrivingSchoolApp.Services;
 
 public static class ApiConfiguration
 {
-    // TODO: Replace this with the confirmed real dev API URL.
-    // A physical Android phone cannot use localhost to reach the laptop API;
-    // use the laptop LAN IP or a reachable dev server URL for device testing.
-    public const string BaseUrl = "http://10.0.2.2:5259";
+    // TODO: Move this into environment-specific app configuration.
+    // Android emulator: use http://10.0.2.2:5259 to reach the host machine.
+    // Physical Android phone: use the PC LAN/hotspot IP from ipconfig.
+    // If the PC changes network, this IP can change and must be updated.
+    public const string BaseUrl = "http://10.115.248.247:5259";
 }

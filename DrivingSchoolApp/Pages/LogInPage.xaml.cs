@@ -1,24 +1,89 @@
-using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using System.Windows.Input;
 using DrivingSchoolApp.Localization;
-using DrivingSchoolApp.DTOs.Common;
-using RestSharp;
+using DrivingSchoolApp.Services;
+using Microsoft.Maui.ApplicationModel;
 
 namespace DrivingSchoolApp.Pages;
 
 public partial class LogInPage : ContentPage
 {
+    private readonly AuthService _authService = new();
+    private bool _isLoggingIn;
+
     public LogInPage()
     {
         InitializeComponent();
-        BindingContext = new LogInViewModel();
 
 #if DEBUG
         AddDebugSkipButton();
 #endif
+    }
+
+    private async void LoginButton_Clicked(object? sender, EventArgs e)
+    {
+        if (_isLoggingIn)
+            return;
+
+        var email = EmailEntry.Text?.Trim() ?? string.Empty;
+        var password = PasswordEntry.Text ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            await DisplayAlertAsync(AppText.LoginMissingInfoTitle, AppText.LoginMissingInfoMessage, AppText.CommonOk);
+            return;
+        }
+
+        try
+        {
+            SetLoginBusy(true);
+            await _authService.LoginInstructorAsync(email, password);
+            await AppNavigation.OpenAppShellAsync();
+        }
+        catch (Exception ex)
+        {
+            await DisplayLoginErrorAsync(ex);
+        }
+        finally
+        {
+            SetLoginBusy(false);
+        }
+    }
+
+    private void SetLoginBusy(bool isBusy)
+    {
+        _isLoggingIn = isBusy;
+        LoginButton.IsEnabled = !isBusy;
+        LoginButton.Text = isBusy ? "Logging in..." : AppText.LoginButton;
+    }
+
+    private Task DisplayLoginErrorAsync(Exception exception)
+    {
+        var message = IsApiReachabilityError(exception)
+            ? "Could not reach the API. Check that the API is running and that BaseUrl points to an address reachable from this phone."
+            : exception.Message;
+
+#if DEBUG
+        message = $"{message}{Environment.NewLine}{Environment.NewLine}BaseUrl: {ApiConfiguration.BaseUrl}{Environment.NewLine}Details: {exception.GetType().Name}: {exception.Message}";
+#else
+        message = exception is InvalidOperationException
+            ? message
+            : "Login failed. Please try again.";
+#endif
+
+        return DisplayAlertAsync("Login failed", message, AppText.CommonOk);
+    }
+
+    private static bool IsApiReachabilityError(Exception exception)
+    {
+        var message = exception.ToString();
+        return message.Contains("timed out", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("timeout", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("ETIMEDOUT", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("connection refused", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("failed to connect", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("No route to host", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("API is running and reachable", StringComparison.OrdinalIgnoreCase);
     }
 
 #if DEBUG
@@ -37,82 +102,25 @@ public partial class LogInPage : ContentPage
         LoginFormLayout.Children.Add(skipButton);
     }
 
-    private static void ContinueWithoutLoginButton_Clicked(object? sender, EventArgs e)
+    private static async void ContinueWithoutLoginButton_Clicked(object? sender, EventArgs e)
     {
-        var window = Application.Current?.Windows.FirstOrDefault();
-
-        if (window is not null)
-        {
-            window.Page = new global::DrivingSchoolApp.AppShell();
-        }
+        await AppNavigation.OpenAppShellAsync();
     }
 #endif
 }
 
-internal sealed class LogInViewModel : BindableObject
+internal static class AppNavigation
 {
-    private string _username = string.Empty;
-    private string _password = string.Empty;
-
-    public string Username
+    public static Task OpenAppShellAsync()
     {
-        get => _username;
-        set => SetProperty(ref _username, value);
-    }
-
-    public string Password
-    {
-        get => _password;
-        set => SetProperty(ref _password, value);
-    }
-
-    public ICommand LoginCommand { get; }
-
-    public LogInViewModel()
-    {
-        LoginCommand = new Command(async () => await ExecuteLoginAsync());
-    }
-
-    private async Task ExecuteLoginAsync()
-    {
-        if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
+        return MainThread.InvokeOnMainThreadAsync(() =>
         {
-            await DisplayAlertAsync(AppText.LoginMissingInfoTitle, AppText.LoginMissingInfoMessage, AppText.CommonOk);
-            return;
-        }
-        
-        var client = new RestClient("http://10.115.248.247:5259");
-        var request = new RestRequest("/auth/login/instructor", Method.Post);
-        request.AddBody(new LoginDto(Username, Password));
-        
-        var response = await client.ExecuteAsync<JwtTokenDto>(request);
- 
-        if(!response.IsSuccessful)
-            await DisplayAlertAsync("Login", response.StatusCode.ToString(), "OK");
-        else
-            await DisplayAlertAsync("Login", "Login Successful", "OK");
+            var window = Application.Current?.Windows.FirstOrDefault();
 
-        await DisplayAlertAsync(AppText.LoginSuccessTitle, AppText.LoginSuccessMessage, AppText.LoginSuccessButton);
-    }
-
-    private static Task DisplayAlertAsync(string title, string message, string cancel)
-    {
-        var page = Application.Current?.Windows.FirstOrDefault()?.Page;
-        return page?.DisplayAlertAsync(title, message, cancel) ?? Task.CompletedTask;
-    }
-// http://10.0.2.2
-//port:5259
-//William47@gmail.com
-//password: test1234
-    private bool SetProperty<T>(ref T backingStore, T value, [CallerMemberName] string? propertyName = null)
-    {
-        if (EqualityComparer<T>.Default.Equals(backingStore, value))
-        {
-            return false;
-        }
-
-        backingStore = value;
-        OnPropertyChanged(propertyName);
-        return true;
+            if (window is not null)
+            {
+                window.Page = new global::DrivingSchoolApp.AppShell();
+            }
+        });
     }
 }

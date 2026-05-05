@@ -9,6 +9,11 @@
 
     <TabBar>
         <ShellContent
+            Route="theory"
+            Title="Theory"
+            ContentTemplate="{DataTemplate pages:TheoryLessonPage}" />
+
+        <ShellContent
             Route="live-route"
             Title="{x:Static text:AppText.ShellRouteTabTitle}"
             ContentTemplate="{DataTemplate pages:LiveRoutePage}" />
@@ -17,10 +22,5 @@
             Route="saved-routes"
             Title="{x:Static text:AppText.ShellSavedTabTitle}"
             ContentTemplate="{DataTemplate pages:SavedRoutesPage}" />
-
-        <ShellContent
-            Route="theory"
-            Title="Theory"
-            ContentTemplate="{DataTemplate pages:TheoryLessonPage}" />
     </TabBar>
 </Shell>

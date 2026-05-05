@@ -14,11 +14,10 @@ public partial class TheoryLessonPage : ContentPage
 #if DEBUG
     // -----------------------------------------------------------------------------
     // DEBUG PLACEHOLDER STUDENTS
-    // Temporary data for designing/debugging the Theory page before real login/API
-    // is connected. Set UsePlaceholderStudents to false later, or remove this whole
-    // DEBUG block when real API service wiring is ready.
+    // Temporary data for debugging the Theory page before real login/API
+    // is connected. Set UsePlaceholderStudents to true to force placeholder data.
     // -----------------------------------------------------------------------------
-    private const bool UsePlaceholderStudents = true;
+    private const bool UsePlaceholderStudents = false;
 
     private static readonly List<StudentDto> PlaceholderStudents = new()
     {
@@ -184,10 +183,9 @@ public partial class TheoryLessonPage : ContentPage
 
     private void FinishButton_Clicked(object? sender, EventArgs e)
     {
-        // TODO: Create theory lessons through the API when login/token wiring and
-        // signature capture are ready. Expected future flow: capture instructor
-        // signature once, then POST one theory lesson per signed student with that
-        // student's signature.
+        // TODO: Create theory lessons through the API when lesson upload is ready.
+        // Expected future flow: capture instructor signature once, then POST one
+        // theory lesson per signed student with that student's signature.
         _lessonStarted = false;
         _instructorSigned = false;
         _currentStudentIndex = 0;
