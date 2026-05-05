@@ -1,6 +1,13 @@
-﻿using DrivingSchoolApp.DTOs.ValueObject;
+﻿using DrivingSchoolApp.DTOs.DrivingLesson;
+using DrivingSchoolApp.DTOs.ValueObject;
 using DrivingSchoolApp.Mapper.ValueObject;
 using DrivingSchoolApp.Models;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using Color = SixLabors.ImageSharp.Color;
+using PointF = SixLabors.ImageSharp.PointF;
 
 namespace DrivingSchoolApp.Mapper;
 
@@ -27,7 +34,7 @@ public static class DrivingRouteMapper
             return new DrivingRouteDto(
                 new DateTimeRangeDto(model.StartedAt.UtcDateTime, model.EndedAt.UtcDateTime),
                 model.Points.OrderBy(x => x.Timestamp)
-                    .Select((point, index) => point.ToDto(index)).ToArray()
+                    .Select((point, index) => point.ToDto(index+1)).ToArray()
             );
         }
     }

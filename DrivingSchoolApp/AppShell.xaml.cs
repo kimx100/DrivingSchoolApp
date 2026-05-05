@@ -18,10 +18,13 @@ public partial class AppShell : Shell
     public AppShell()
     {
         InitializeComponent();
-
+        
+        Routing.RegisterRoute(nameof(LiveRoutePage), typeof(LogInPage));
+        Routing.RegisterRoute(nameof(LogInPage), typeof(LogInPage));
         Routing.RegisterRoute(nameof(RouteDetailPage), typeof(RouteDetailPage));
         Routing.RegisterRoute(nameof(RouteConfirmationPage), typeof(RouteConfirmationPage));
-
+        Routing.RegisterRoute(nameof(SavedRoutesPage), typeof(SavedRoutesPage));
+        
         _trackingCoordinator.SnapshotChanged += TrackingCoordinator_SnapshotChanged;
         ApplyChrome(_trackingCoordinator.GetSnapshot().IsTracking);
 

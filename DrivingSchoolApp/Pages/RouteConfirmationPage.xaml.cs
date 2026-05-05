@@ -3,9 +3,13 @@ using System.Linq;
 using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Maui.Core.Views;
 using CommunityToolkit.Maui.Views;
+using DrivingSchoolApp.DTOs.DrivingLesson;
+using DrivingSchoolApp.DTOs.Instructor;
 using DrivingSchoolApp.Localization;
+using DrivingSchoolApp.Mapper;
 using DrivingSchoolApp.Models;
 using DrivingSchoolApp.Services;
+using DrivingSchoolApp.Services.API;
 using DrivingSchoolApp.ViewModels;
 using Mapsui;
 using Mapsui.Projections;
@@ -19,6 +23,9 @@ namespace DrivingSchoolApp.Pages;
 [QueryProperty(nameof(SessionId), "sessionId")]
 public partial class RouteConfirmationPage : ContentPage
 {
+    private readonly IAuthService _authService;
+    private readonly IInstructorService _instructorService;
+    
     private const string CurrentStudentNameKey = "CurrentStudentName";
     private const string CurrentInstructorNameKey = "CurrentInstructorName";
 
@@ -35,10 +42,13 @@ public partial class RouteConfirmationPage : ContentPage
         set => _sessionId = Uri.UnescapeDataString(value ?? string.Empty);
     }
 
-    public RouteConfirmationPage()
+    public RouteConfirmationPage(IAuthService authService, IInstructorService instructorService)
     {
         InitializeComponent();
 
+        _authService = authService;
+        _instructorService = instructorService;
+        
         BindingContext = _viewModel;
 
         InstructorSignaturePad.Lines = new ObservableCollection<IDrawingLine>();
@@ -225,7 +235,16 @@ public partial class RouteConfirmationPage : ContentPage
     {
         if (_session is null)
             return;
-
+        
+        var self = await _authService.GetSelfAsync<InstructorDto>();
+        if (!self.IsSuccessful)
+        {
+            await DisplayAlertAsync("Unauthorized", "You need to log in before you can save a driving route",
+                AppText.CommonOk);
+            await Shell.Current.GoToAsync($"//{nameof(LogInPage)}");
+            return;
+        }
+        
         var studentName = _viewModel.StudentName.Trim();
         var instructorName = _viewModel.InstructorName.Trim();
 
@@ -279,13 +298,28 @@ public partial class RouteConfirmationPage : ContentPage
         _session.StudentSignature = BuildSignature(StudentSignaturePad, student.FullName, finalizedAt);
         _session.IsFinalized = true;
         _session.FinalizedAt = finalizedAt;
+        
+        var drivingLessonRegistry = await _session.ToRegistryDto(
+            self.Data!.SchoolId,
+            new Money(1000, "DKK"), // TODO: Money should come from user input
+            (int)InstructorSignaturePad.Width,
+            (int)InstructorSignaturePad.Height
+        );
 
+        var created = await _instructorService.CreateDrivingLessonAsync(self.Data!.Id, drivingLessonRegistry);
+        if (!created.IsSuccessful)
+        {
+            await DisplayAlertAsync("Error", created.ErrorMessage, AppText.CommonOk);
+            return;
+        }
+        
         await RouteStorage.SaveAsync(_session);
         await RouteSnapBackgroundProcessor.EnqueueAsync(_session.Id);
 
         Preferences.Set(CurrentStudentNameKey, student.FullName);
         Preferences.Set(CurrentInstructorNameKey, instructorName);
 
+        
         await DisplayAlertAsync(AppText.RouteReviewFinalizedTitle, AppText.RouteReviewFinalizedMessage, AppText.CommonOk);
         await Shell.Current.GoToAsync("//saved-routes");
     }
