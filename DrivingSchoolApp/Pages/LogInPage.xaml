@@ -3,20 +3,20 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Login"
-    BackgroundColor="{DynamicResource Secondary}">
+    BackgroundColor="{StaticResource PageBackground}">
 
     <Grid Padding="24">
         <Grid.Background>
-            <SolidColorBrush Color="White"></SolidColorBrush>
+            <SolidColorBrush Color="{StaticResource PageBackground}" />
         </Grid.Background>
 
         <Border
-            Stroke="#f3f3f3"
+            Stroke="{StaticResource InputBorder}"
             StrokeShape="RoundRectangle 24"
             Padding="28"
             VerticalOptions="Center"
             HorizontalOptions="Fill"
-            BackgroundColor="#f3f3f3"
+            BackgroundColor="{StaticResource White}"
             StrokeThickness="1">
             <Border.Shadow>
                 <Shadow
@@ -32,30 +32,34 @@
                        FontSize="28"
                        FontAttributes="Bold"
                        HorizontalOptions="Center"
-                       TextColor="Black" />
+                       TextColor="{StaticResource Black}" />
 
                 <Entry Placeholder="Email"
                        Keyboard="Email"
                        Text="{Binding Username}"
-                       HorizontalOptions="Fill" 
-                       BackgroundColor="White" />
+                       HorizontalOptions="Fill"
+                       TextColor="{StaticResource Black}"
+                       PlaceholderColor="{StaticResource Gray600}"
+                       BackgroundColor="{StaticResource White}" />
 
                 <Entry Placeholder="Password"
                        IsPassword="True"
                        Text="{Binding Password}"
-                       HorizontalOptions="Fill" 
-                       BackgroundColor="White" />
+                       HorizontalOptions="Fill"
+                       TextColor="{StaticResource Black}"
+                       PlaceholderColor="{StaticResource Gray600}"
+                       BackgroundColor="{StaticResource White}" />
 
                 <Button Text="Log ind"
                         Command="{Binding LoginCommand}"
                         CornerRadius="12"
-                        BackgroundColor="#1E63D6"
-                        TextColor="White" />
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="{StaticResource White}" />
 
                 <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
                     <Label Text="Forgot password?"
                            FontSize="12"
-                           TextColor="#0D3B66" />
+                           TextColor="{StaticResource PrimaryDark}" />
                 </HorizontalStackLayout>
             </VerticalStackLayout>
         </Border>

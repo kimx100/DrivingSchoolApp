@@ -8,15 +8,15 @@
 
     <TabBar>
         <ShellContent
+            Title="Theory"
+            ContentTemplate="{DataTemplate pages:TheoryLessonPage}" />
+
+        <ShellContent
             Title="Route"
             ContentTemplate="{DataTemplate pages:LiveRoutePage}" />
 
         <ShellContent
             Title="Saved"
             ContentTemplate="{DataTemplate pages:SavedRoutesPage}" />
-
-        <ShellContent
-            Title="Theory"
-            ContentTemplate="{DataTemplate pages:TheoryLessonPage}" />
     </TabBar>
 </Shell>

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+using CommunityToolkit.Maui;
+using Microsoft.Extensions.Logging;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace DrivingSchoolApp;
@@ -11,6 +12,7 @@ public static class MauiProgram
 
         builder
             .UseMauiApp<App>()
+            .UseMauiCommunityToolkit()
             .UseSkiaSharp()
             .ConfigureFonts(fonts =>
             {

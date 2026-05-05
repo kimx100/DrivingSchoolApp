@@ -3,8 +3,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using DrivingSchoolApp.DTOs.Common;
-using RestSharp;
+using DrivingSchoolApp.Services;
+using Microsoft.Maui.ApplicationModel;
 
 namespace DrivingSchoolApp.Pages;
 
@@ -36,20 +36,32 @@ public partial class LogInPage : ContentPage
         LoginFormLayout.Children.Add(skipButton);
     }
 
-    private static void ContinueWithoutLoginButton_Clicked(object? sender, EventArgs e)
+    private static async void ContinueWithoutLoginButton_Clicked(object? sender, EventArgs e)
     {
-        var window = Application.Current?.Windows.FirstOrDefault();
-
-        if (window is not null)
-        {
-            window.Page = new global::DrivingSchoolApp.AppShell();
-        }
+        await AppNavigation.OpenAppShellAsync();
     }
 #endif
 }
 
+internal static class AppNavigation
+{
+    public static Task OpenAppShellAsync()
+    {
+        return MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            var window = Application.Current?.Windows.FirstOrDefault();
+
+            if (window is not null)
+            {
+                window.Page = new global::DrivingSchoolApp.AppShell();
+            }
+        });
+    }
+}
+
 internal sealed class LogInViewModel : BindableObject
 {
+    private readonly AuthService _authService = new();
     private string _username = string.Empty;
     private string _password = string.Empty;
 
@@ -80,18 +92,16 @@ internal sealed class LogInViewModel : BindableObject
             return;
         }
         
-        var client = new RestClient("http://10.115.248.247:5259");
-        var request = new RestRequest("/auth/login/instructor", Method.Post);
-        request.AddBody(new LoginDto(Username, Password));
-        
-        var response = await client.ExecuteAsync<JwtTokenDto>(request);
+        try
+        {
+            await _authService.LoginInstructorAsync(Username.Trim(), Password);
 
-        if(!response.IsSuccessful)
-            await DisplayAlertAsync("Login", response.StatusCode.ToString(), "OK");
-        else
-            await DisplayAlertAsync("Login", "Login Successful", "OK");
-
-        
+            await AppNavigation.OpenAppShellAsync();
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Login failed", ex.Message, "OK");
+        }
     }
 
     private static Task DisplayAlertAsync(string title, string message, string cancel)
@@ -99,10 +109,6 @@ internal sealed class LogInViewModel : BindableObject
         var page = Application.Current?.Windows.FirstOrDefault()?.Page;
         return page?.DisplayAlertAsync(title, message, cancel) ?? Task.CompletedTask;
     }
-// http://10.0.2.2
-//port:5259
-//William47@gmail.com
-//password: test1234
     private bool SetProperty<T>(ref T backingStore, T value, [CallerMemberName] string? propertyName = null)
     {
         if (EqualityComparer<T>.Default.Equals(backingStore, value))
