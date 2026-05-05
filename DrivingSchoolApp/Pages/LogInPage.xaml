@@ -33,24 +33,25 @@
                        HorizontalOptions="Center"
                        TextColor="{StaticResource Black}" />
 
-                <Entry Placeholder="{x:Static text:AppText.LoginEmailPlaceholder}"
+                <Entry x:Name="EmailEntry"
+                       Placeholder="{x:Static text:AppText.LoginEmailPlaceholder}"
                        Keyboard="Email"
-                       Text="{Binding Username}"
                        HorizontalOptions="Fill"
                        TextColor="{StaticResource Black}"
                        PlaceholderColor="{StaticResource Gray600}"
                        BackgroundColor="{StaticResource White}" />
 
-                <Entry Placeholder="{x:Static text:AppText.LoginPasswordPlaceholder}"
+                <Entry x:Name="PasswordEntry"
+                       Placeholder="{x:Static text:AppText.LoginPasswordPlaceholder}"
                        IsPassword="True"
-                       Text="{Binding Password}"
                        HorizontalOptions="Fill"
                        TextColor="{StaticResource Black}"
                        PlaceholderColor="{StaticResource Gray600}"
                        BackgroundColor="{StaticResource White}" />
 
-                <Button Text="{x:Static text:AppText.LoginButton}"
-                        Command="{Binding LoginCommand}"
+                <Button x:Name="LoginButton"
+                        Text="{x:Static text:AppText.LoginButton}"
+                        Clicked="LoginButton_Clicked"
                         CornerRadius="12"
                         BackgroundColor="{StaticResource Primary}"
                         TextColor="{StaticResource White}" />

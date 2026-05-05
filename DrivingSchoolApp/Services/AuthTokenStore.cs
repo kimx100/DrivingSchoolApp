@@ -27,12 +27,6 @@ public sealed class AuthTokenStore
 
     public Task ClearAsync()
     {
-        ClearTokens();
-        return Task.CompletedTask;
-    }
-
-    public Task ClearAsync()
-    {
         SecureStorage.Default.Remove(AccessTokenKey);
         SecureStorage.Default.Remove(RefreshTokenKey);
         return Task.CompletedTask;
