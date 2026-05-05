@@ -4,7 +4,8 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:mapsui="clr-namespace:Mapsui.UI.Maui;assembly=Mapsui.UI.Maui"
-    Title="Route"
+    xmlns:text="clr-namespace:DrivingSchoolApp.Localization"
+    Title="{x:Static text:AppText.LiveRoutePageTitle}"
     BackgroundColor="{StaticResource PageBackground}">
 
     <Grid>
@@ -23,6 +24,15 @@
                 Padding="14">
 
                 <VerticalStackLayout Spacing="12">
+                    <Button
+                        x:Name="RecenterButton"
+                        Text="{x:Static text:AppText.LiveCenterButton}"
+                        Clicked="RecenterButton_Clicked"
+                        HorizontalOptions="Center"
+                        BackgroundColor="{StaticResource White}"
+                        TextColor="{StaticResource Black}"
+                        IsVisible="False" />
+                    
                     <Label
                         x:Name="HeroElapsedLabel"
                         Text="00:00"
@@ -31,38 +41,29 @@
                         HorizontalTextAlignment="Center"
                         TextColor="{StaticResource Black}" />
 
-                    <Button
-                        x:Name="RecenterButton"
-                        Text="Center"
-                        Clicked="RecenterButton_Clicked"
-                        HorizontalOptions="Center"
-                        BackgroundColor="{StaticResource White}"
-                        TextColor="{StaticResource Black}"
-                        IsVisible="False" />
-
                     <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10">
                         <Button
                             x:Name="StartButton"
                             Grid.Column="0"
-                            Text="Start"
+                            Text="{x:Static text:AppText.LiveStartButton}"
                             Clicked="StartButton_Clicked" />
 
                         <Button
                             x:Name="StopButton"
                             Grid.Column="1"
-                            Text="Stop"
+                            Text="{x:Static text:AppText.LiveStopButton}"
                             Clicked="StopButton_Clicked" />
 
                         <Button
                             x:Name="EndButton"
                             Grid.Column="2"
-                            Text="End"
+                            Text="{x:Static text:AppText.LiveEndButton}"
                             Clicked="EndButton_Clicked" />
 
                         <Button
                             x:Name="ResetButton"
                             Grid.Column="3"
-                            Text="Reset"
+                            Text="{x:Static text:AppText.LiveResetButton}"
                             Clicked="ResetButton_Clicked"
                             BackgroundColor="{StaticResource Gray300}"
                             TextColor="{StaticResource Black}" />
@@ -94,14 +95,14 @@
                         HorizontalOptions="Center" />
 
                     <Label
-                        Text="Waiting for first GPS point"
+                        Text="{x:Static text:AppText.LiveWaitingForGpsTitle}"
                         FontSize="18"
                         FontAttributes="Bold"
                         HorizontalTextAlignment="Center"
                         TextColor="{StaticResource Black}" />
 
                     <Label
-                        Text="Keep the app open for a moment while the phone gets a valid location fix."
+                        Text="{x:Static text:AppText.LiveWaitingForGpsMessage}"
                         FontSize="13"
                         HorizontalTextAlignment="Center"
                         TextColor="{StaticResource Gray600}" />

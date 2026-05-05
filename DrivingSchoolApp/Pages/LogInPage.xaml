@@ -2,7 +2,8 @@
     x:Class="DrivingSchoolApp.Pages.LogInPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    Title="Login"
+    xmlns:text="clr-namespace:DrivingSchoolApp.Localization"
+    Title="{x:Static text:AppText.LoginPageTitle}"
     BackgroundColor="{StaticResource PageBackground}">
 
     <Grid Padding="24">
@@ -20,21 +21,19 @@
             StrokeThickness="1">
             <Border.Shadow>
                 <Shadow
-                    Brush="#40000000"
+                    Brush="{StaticResource ShadowColorBrush}"
                     Offset="0,8"
                     Radius="18"
                     Opacity="0.35" />
             </Border.Shadow>
-            <VerticalStackLayout
-                x:Name="LoginFormLayout"
-                Spacing="16">
-                <Label Text="Log ind"
+            <VerticalStackLayout x:Name="LoginFormLayout" Spacing="16">
+                <Label Text="{x:Static text:AppText.LoginHeader}"
                        FontSize="28"
                        FontAttributes="Bold"
                        HorizontalOptions="Center"
                        TextColor="{StaticResource Black}" />
 
-                <Entry Placeholder="Email"
+                <Entry Placeholder="{x:Static text:AppText.LoginEmailPlaceholder}"
                        Keyboard="Email"
                        Text="{Binding Username}"
                        HorizontalOptions="Fill"
@@ -42,7 +41,7 @@
                        PlaceholderColor="{StaticResource Gray600}"
                        BackgroundColor="{StaticResource White}" />
 
-                <Entry Placeholder="Password"
+                <Entry Placeholder="{x:Static text:AppText.LoginPasswordPlaceholder}"
                        IsPassword="True"
                        Text="{Binding Password}"
                        HorizontalOptions="Fill"
@@ -50,14 +49,14 @@
                        PlaceholderColor="{StaticResource Gray600}"
                        BackgroundColor="{StaticResource White}" />
 
-                <Button Text="Log ind"
+                <Button Text="{x:Static text:AppText.LoginButton}"
                         Command="{Binding LoginCommand}"
                         CornerRadius="12"
                         BackgroundColor="{StaticResource Primary}"
                         TextColor="{StaticResource White}" />
 
                 <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
-                    <Label Text="Forgot password?"
+                    <Label Text="{x:Static text:AppText.LoginForgotPassword}"
                            FontSize="12"
                            TextColor="{StaticResource PrimaryDark}" />
                 </HorizontalStackLayout>

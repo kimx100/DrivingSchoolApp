@@ -134,9 +134,11 @@ public class LessonTrackingForegroundService : global::Android.App.Service
     
     private async Task TryCaptureAndProcessPointAsync(CancellationToken ct)
     {
+        var currentSnapshot = TrackingCoordinator.Instance.GetSnapshot();
+        var allowQuickFirstPoint = !currentSnapshot.HasFirstPoint;
         var request = new GeolocationRequest(
-            GeolocationAccuracy.Best,
-            TimeSpan.FromSeconds(8));
+            allowQuickFirstPoint ? GeolocationAccuracy.High : GeolocationAccuracy.Best,
+            allowQuickFirstPoint ? TimeSpan.FromSeconds(4) : TimeSpan.FromSeconds(8));
 
         var location = await Geolocation.Default.GetLocationAsync(request, ct);
         if (location is null)
@@ -153,10 +155,10 @@ public class LessonTrackingForegroundService : global::Android.App.Service
             SpeedMps: location.Speed
         );
 
-        if (TrackingCoordinator.Instance.TryAcceptRawPoint(raw, out _))
+        if (TrackingCoordinator.Instance.TryAcceptRawPoint(raw, out _, allowQuickFirstPoint))
         {
-            var snapshot = TrackingCoordinator.Instance.GetSnapshot();
-            UpdateNotification(snapshot.TotalPointCount);
+            var acceptedSnapshot = TrackingCoordinator.Instance.GetSnapshot();
+            UpdateNotification(acceptedSnapshot.TotalPointCount);
         }
     }
     

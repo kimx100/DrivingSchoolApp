@@ -160,10 +160,10 @@
                         <toolkit:DrawingView
                             x:Name="InstructorSignaturePad"
                             HeightRequest="180"
-                            BackgroundColor="{StaticResource White}"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}"
                             IsMultiLineModeEnabled="True"
                             ShouldClearOnFinish="False"
-                            LineColor="{StaticResource Black}"
+                            LineColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}"
                             LineWidth="4" />
 
                         <Label
@@ -213,10 +213,10 @@
                         <toolkit:DrawingView
                             x:Name="StudentSignaturePad"
                             HeightRequest="180"
-                            BackgroundColor="{StaticResource White}"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}"
                             IsMultiLineModeEnabled="True"
                             ShouldClearOnFinish="False"
-                            LineColor="{StaticResource Black}"
+                            LineColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}"
                             LineWidth="4" />
 
                         <Label

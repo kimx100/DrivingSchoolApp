@@ -18,6 +18,13 @@ public static class RouteSnapBackgroundProcessor
 
         foreach (var route in routes)
         {
+            if (!route.IsFinalized)
+            {
+                await RouteSnapStorage.DeleteAsync(route.Id);
+                await RouteSnapStateStorage.DeleteAsync(route.Id);
+                continue;
+            }
+
             var state = await RouteSnapStateStorage.LoadAsync(route.Id);
             var snapCache = await RouteSnapStorage.LoadAsync(route.Id);
 
@@ -70,6 +77,10 @@ public static class RouteSnapBackgroundProcessor
 
     public static async Task EnqueueAsync(string sessionId)
     {
+        var route = await RouteStorage.LoadAsync(sessionId);
+        if (route is null || !route.IsFinalized)
+            return;
+
         var state = await RouteSnapStateStorage.LoadAsync(sessionId) ?? new RouteSnapState
         {
             SessionId = sessionId
@@ -166,6 +177,14 @@ public static class RouteSnapBackgroundProcessor
         };
 
         var route = await RouteStorage.LoadAsync(sessionId);
+        if (route is not null && !route.IsFinalized)
+        {
+            await RouteSnapStorage.DeleteAsync(sessionId);
+            await RouteSnapStateStorage.DeleteAsync(sessionId);
+            RaiseStatesChanged();
+            return;
+        }
+
         if (route is null || route.Points is not { Count: > 1 })
         {
             state.Status = RouteSnapWorkStatus.Failed;

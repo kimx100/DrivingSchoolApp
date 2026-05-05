@@ -17,13 +17,15 @@ public sealed class TrackProcessingService
         _emaLon = 0;
     }
 
-    public bool TryProcess(TrackPoint raw, out TrackPoint processed)
+    public bool TryProcess(TrackPoint raw, out TrackPoint processed, bool allowQuickFirstPoint = false)
     {
         processed = raw;
         var acc = raw.AccuracyMeters ?? 9999;
 
         // 1) Drop very inaccurate points
-        var maxAllowedAccuracy = _lastAccepted is null ? 80 : 50;
+        var maxAllowedAccuracy = _lastAccepted is null
+            ? (allowQuickFirstPoint ? 150 : 80)
+            : 50;
         if (acc > maxAllowedAccuracy)
             return false;
 

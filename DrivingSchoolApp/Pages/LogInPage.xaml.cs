@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using DrivingSchoolApp.Services;
 using Microsoft.Maui.ApplicationModel;
+using DrivingSchoolApp.Localization;
+using DrivingSchoolApp.DTOs.Common;
+using RestSharp;
 
 namespace DrivingSchoolApp.Pages;
 
@@ -88,7 +91,7 @@ internal sealed class LogInViewModel : BindableObject
     {
         if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
         {
-            await DisplayAlertAsync("Missing information", "Please provide both email and password.", "OK");
+            await DisplayAlertAsync(AppText.LoginMissingInfoTitle, AppText.LoginMissingInfoMessage, AppText.CommonOk);
             return;
         }
         
@@ -102,6 +105,18 @@ internal sealed class LogInViewModel : BindableObject
         {
             await DisplayAlertAsync("Login failed", ex.Message, "OK");
         }
+        var client = new RestClient("http://10.115.248.247:5259");
+        var request = new RestRequest("/auth/login/instructor", Method.Post);
+        request.AddBody(new LoginDto(Username, Password));
+        
+        var response = await client.ExecuteAsync<JwtTokenDto>(request);
+ 
+        if(!response.IsSuccessful)
+            await DisplayAlertAsync("Login", response.StatusCode.ToString(), "OK");
+        else
+            await DisplayAlertAsync("Login", "Login Successful", "OK");
+
+        await DisplayAlertAsync(AppText.LoginSuccessTitle, AppText.LoginSuccessMessage, AppText.LoginSuccessButton);
     }
 
     private static Task DisplayAlertAsync(string title, string message, string cancel)

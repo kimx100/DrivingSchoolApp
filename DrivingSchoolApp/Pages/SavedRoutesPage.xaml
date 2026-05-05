@@ -3,13 +3,14 @@
     x:Class="DrivingSchoolApp.Pages.SavedRoutesPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    Title="Saved routes"
+    xmlns:text="clr-namespace:DrivingSchoolApp.Localization"
+    Title="{x:Static text:AppText.SavedRoutesPageTitle}"
     BackgroundColor="{StaticResource PageBackground}">
 
     <ContentPage.ToolbarItems>
         <ToolbarItem
             x:Name="EditToolbarItem"
-            Text="Edit"
+            Text="{x:Static text:AppText.SavedRoutesEdit}"
             Order="Primary"
             Clicked="EditToolbarItem_Clicked" />
     </ContentPage.ToolbarItems>
@@ -22,13 +23,13 @@
         <CollectionView.EmptyView>
             <VerticalStackLayout Padding="24" Spacing="8">
                 <Label
-                    Text="No saved routes yet"
+                    Text="{x:Static text:AppText.SavedRoutesEmptyTitle}"
                     FontSize="18"
                     FontAttributes="Bold"
                     HorizontalTextAlignment="Center"
                     TextColor="{StaticResource Black}" />
                 <Label
-                    Text="End a route from the live screen and it will appear here."
+                    Text="{x:Static text:AppText.SavedRoutesEmptyMessage}"
                     FontSize="13"
                     HorizontalTextAlignment="Center"
                     TextColor="{StaticResource Gray600}" />

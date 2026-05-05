@@ -31,9 +31,10 @@ public sealed class AuthTokenStore
         return Task.CompletedTask;
     }
 
-    public void ClearTokens()
+    public Task ClearAsync()
     {
         SecureStorage.Default.Remove(AccessTokenKey);
         SecureStorage.Default.Remove(RefreshTokenKey);
+        return Task.CompletedTask;
     }
 }

@@ -1,4 +1,5 @@
 using System.Linq;
+using DrivingSchoolApp.Localization;
 using DrivingSchoolApp.Models;
 using DrivingSchoolApp.Services;
 using Mapsui;
@@ -66,7 +67,7 @@ public partial class RouteDetailPage : ContentPage
 
     private async Task LoadRouteAsync()
     {
-        LoadingMessageLabel.Text = "Loading route...";
+        LoadingMessageLabel.Text = AppText.RouteDetailLoadingMessage;
         LoadingOverlay.IsVisible = true;
 
         _session = await RouteStorage.LoadAsync(SessionId!);
@@ -74,7 +75,7 @@ public partial class RouteDetailPage : ContentPage
         if (_session is null || _session.Points is not { Count: > 0 })
         {
             LoadingOverlay.IsVisible = false;
-            await DisplayAlert("Route not found", "This saved route could not be loaded.", "OK");
+            await DisplayAlertAsync(AppText.RouteDetailNotFoundTitle, AppText.RouteDetailNotFoundMessage, AppText.CommonOk);
             await Shell.Current.GoToAsync("..");
             return;
         }
@@ -82,18 +83,10 @@ public partial class RouteDetailPage : ContentPage
         _snapCache = await RouteSnapStorage.LoadAsync(_session.Id);
         _snapState = await RouteSnapBackgroundProcessor.GetStateAsync(_session.Id);
 
-        if (_snapState?.Status is RouteSnapWorkStatus.Pending or RouteSnapWorkStatus.Processing)
-        {
-            LoadingOverlay.IsVisible = false;
-            await DisplayAlert(
-                "Still processing",
-                "This route is still being processed. Please wait until it is ready to view.",
-                "OK");
-            await Shell.Current.GoToAsync("..");
-            return;
-        }
+        Title = string.IsNullOrWhiteSpace(_session.StudentName)
+            ? _session.StartedAt.LocalDateTime.ToString("dd MMM yyyy")
+            : _session.StudentName;
 
-        Title = _session.StartedAt.LocalDateTime.ToString("dd MMM yyyy");
         DrawBestAvailableRoute();
         UpdateSnapToolbarText();
 
@@ -138,17 +131,24 @@ public partial class RouteDetailPage : ContentPage
 
     private void UpdateSnapToolbarText()
     {
+        if (_snapState?.Status is RouteSnapWorkStatus.Pending or RouteSnapWorkStatus.Processing)
+        {
+            SnapToolbarItem.Text = AppText.RouteDetailSnappingInProgressButton;
+            SnapToolbarItem.IsEnabled = false;
+            return;
+        }
+
         if (_snapState?.Status == RouteSnapWorkStatus.Failed)
         {
-            SnapToolbarItem.Text = "Retry snap";
+            SnapToolbarItem.Text = AppText.RouteDetailRetrySnapButton;
         }
         else if (HasUsableSnappedGeometry())
         {
-            SnapToolbarItem.Text = "Re-snap";
+            SnapToolbarItem.Text = AppText.RouteDetailResnapButton;
         }
         else
         {
-            SnapToolbarItem.Text = "Snap";
+            SnapToolbarItem.Text = AppText.RouteDetailSnapButton;
         }
 
         SnapToolbarItem.IsEnabled = !_isSnapping;
@@ -200,13 +200,13 @@ public partial class RouteDetailPage : ContentPage
 
         RouteMapView.Pins.Add(new Pin
         {
-            Label = "Start",
+            Label = AppText.RouteDetailStartPin,
             Position = first
         });
 
         RouteMapView.Pins.Add(new Pin
         {
-            Label = "End",
+            Label = AppText.RouteDetailEndPin,
             Position = last
         });
 
@@ -251,8 +251,8 @@ public partial class RouteDetailPage : ContentPage
         UpdateSnapToolbarText();
 
         LoadingMessageLabel.Text = HasUsableSnappedGeometry()
-            ? "Re-snapping route..."
-            : "Snapping route...";
+            ? AppText.RouteDetailResnappingMessage
+            : AppText.RouteDetailSnappingMessage;
         LoadingOverlay.IsVisible = true;
 
         try
@@ -261,7 +261,7 @@ public partial class RouteDetailPage : ContentPage
 
             if (!result.Success || result.Cache is null)
             {
-                await DisplayAlert("Snap unavailable", result.Message, "OK");
+                await DisplayAlertAsync(AppText.RouteDetailSnapUnavailableTitle, result.Message, AppText.CommonOk);
                 return;
             }
 
@@ -274,10 +274,10 @@ public partial class RouteDetailPage : ContentPage
             DrawBestAvailableRoute();
             UpdateSnapToolbarText();
 
-            await DisplayAlert(
-                "Route snapped",
-                "The saved route has been polished and cached for offline viewing.",
-                "OK");
+            await DisplayAlertAsync(
+                AppText.RouteDetailSnappedTitle,
+                AppText.RouteDetailSnappedMessage,
+                AppText.CommonOk);
         }
         finally
         {
@@ -292,11 +292,11 @@ public partial class RouteDetailPage : ContentPage
         if (string.IsNullOrWhiteSpace(SessionId))
             return;
 
-        var confirmed = await DisplayAlert(
-            "Delete route?",
-            "This saved route will be deleted.",
-            "Delete",
-            "Cancel");
+        var confirmed = await DisplayAlertAsync(
+            AppText.RouteDetailDeleteTitle,
+            AppText.RouteDetailDeleteMessage,
+            AppText.RouteDetailDeleteButton,
+            AppText.CommonCancel);
 
         if (!confirmed)
             return;

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Linq;
+using DrivingSchoolApp.Localization;
 using DrivingSchoolApp.Models;
 using DrivingSchoolApp.Services;
 
@@ -19,7 +20,7 @@ public partial class SavedRoutesPage : ContentPage
 
         _deleteToolbarItem = new ToolbarItem
         {
-            Text = "Delete",
+            Text = AppText.SavedRoutesDelete,
             Order = ToolbarItemOrder.Primary,
             Priority = 0
         };
@@ -63,7 +64,7 @@ public partial class SavedRoutesPage : ContentPage
             item.IsEditing = _isEditing;
 
             var state = await RouteSnapBackgroundProcessor.GetStateAsync(session.Id);
-            item.ApplySnapState(state);
+            item.ApplyStatus(state);
 
             _routes.Add(item);
         }
@@ -72,7 +73,7 @@ public partial class SavedRoutesPage : ContentPage
     private void EditToolbarItem_Clicked(object? sender, EventArgs e)
     {
         _isEditing = !_isEditing;
-        EditToolbarItem.Text = _isEditing ? "Done" : "Edit";
+        EditToolbarItem.Text = _isEditing ? AppText.SavedRoutesDone : AppText.SavedRoutesEdit;
 
         if (_isEditing)
         {
@@ -102,15 +103,15 @@ public partial class SavedRoutesPage : ContentPage
 
         if (selected.Count == 0)
         {
-            await DisplayAlert("Delete routes", "Select at least one route first.", "OK");
+            await DisplayAlertAsync(AppText.SavedRoutesDeleteTitle, AppText.SavedRoutesDeleteSelectMessage, AppText.CommonOk);
             return;
         }
 
-        var confirmed = await DisplayAlert(
-            "Delete selected routes?",
-            $"Delete {selected.Count} saved route(s)?",
-            "Delete",
-            "Cancel");
+        var confirmed = await DisplayAlertAsync(
+            AppText.SavedRoutesDeleteConfirmTitle,
+            AppText.FormatSavedRoutesDeleteCount(selected.Count),
+            AppText.SavedRoutesDelete,
+            AppText.CommonCancel);
 
         if (!confirmed)
             return;
@@ -124,7 +125,7 @@ public partial class SavedRoutesPage : ContentPage
         if (_routes.Count == 0)
         {
             _isEditing = false;
-            EditToolbarItem.Text = "Edit";
+            EditToolbarItem.Text = AppText.SavedRoutesEdit;
             ToolbarItems.Remove(_deleteToolbarItem);
         }
     }
@@ -140,12 +141,10 @@ public partial class SavedRoutesPage : ContentPage
             return;
         }
 
-        if (!item.CanOpen)
+        if (!item.IsFinalized)
         {
-            await DisplayAlert(
-                "Still processing",
-                "This route is still being processed. Please wait until it is ready to view.",
-                "OK");
+            await Shell.Current.GoToAsync(
+                $"{nameof(RouteConfirmationPage)}?sessionId={Uri.EscapeDataString(item.SessionId)}");
             return;
         }
 

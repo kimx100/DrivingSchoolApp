@@ -14,7 +14,7 @@ public partial class TheoryLessonPage : ContentPage
 #if DEBUG
     // -----------------------------------------------------------------------------
     // DEBUG PLACEHOLDER STUDENTS
-    // Temporary data for designing/debugging the Theory page before real login/API
+    // Temporary data for debugging the Theory page before real login/API
     // is connected. Set UsePlaceholderStudents to true to force placeholder data.
     // -----------------------------------------------------------------------------
     private const bool UsePlaceholderStudents = false;
