@@ -14,8 +14,29 @@
             IsZoomButtonVisible="True"
             IsMyLocationButtonVisible="False" />
 
-        <Grid Padding="16">
+        <Grid
+            Padding="16"
+            RowDefinitions="Auto,Auto"
+            VerticalOptions="End">
+            <Button
+                x:Name="RecenterButton"
+                Grid.Row="0"
+                Text="{x:Static text:AppText.LiveCenterButton}"
+                Clicked="RecenterButton_Clicked"
+                HorizontalOptions="End"
+                WidthRequest="104"
+                HeightRequest="44"
+                Margin="0,0,0,10"
+                Padding="10,6"
+                CornerRadius="22"
+                BackgroundColor="{StaticResource White}"
+                TextColor="{StaticResource Black}"
+                BorderColor="{StaticResource InputBorder}"
+                BorderWidth="1"
+                IsVisible="False" />
+
             <Border
+                Grid.Row="1"
                 VerticalOptions="End"
                 BackgroundColor="#F7FFFFFF"
                 Stroke="{StaticResource InputBorder}"
@@ -24,15 +45,6 @@
                 Padding="14">
 
                 <VerticalStackLayout Spacing="12">
-                    <Button
-                        x:Name="RecenterButton"
-                        Text="{x:Static text:AppText.LiveCenterButton}"
-                        Clicked="RecenterButton_Clicked"
-                        HorizontalOptions="Center"
-                        BackgroundColor="{StaticResource White}"
-                        TextColor="{StaticResource Black}"
-                        IsVisible="False" />
-                    
                     <Label
                         x:Name="HeroElapsedLabel"
                         Text="00:00"
