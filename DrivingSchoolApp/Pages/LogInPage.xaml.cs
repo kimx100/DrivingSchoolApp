@@ -15,7 +15,38 @@ public partial class LogInPage : ContentPage
     {
         InitializeComponent();
         BindingContext = new LogInViewModel(authService);
+
+#if DEBUG
+        AddDebugSkipButton();
+#endif
     }
+
+#if DEBUG
+    private void AddDebugSkipButton()
+    {
+        var skipButton = new Button
+        {
+            Text = "Continue without login",
+            CornerRadius = 12
+        };
+
+        skipButton.SetDynamicResource(Button.BackgroundColorProperty, "Gray300");
+        skipButton.SetDynamicResource(Button.TextColorProperty, "Black");
+        skipButton.Clicked += ContinueWithoutLoginButton_Clicked;
+
+        LoginFormLayout.Children.Add(skipButton);
+    }
+
+    private static void ContinueWithoutLoginButton_Clicked(object? sender, EventArgs e)
+    {
+        var window = Application.Current?.Windows.FirstOrDefault();
+
+        if (window is not null)
+        {
+            window.Page = new global::DrivingSchoolApp.AppShell();
+        }
+    }
+#endif
 }
 
 internal sealed class LogInViewModel : BindableObject
@@ -54,13 +85,10 @@ internal sealed class LogInViewModel : BindableObject
         var loginDto = new LoginDto(Username, Password);
         var successfulLogin = await _authService.LoginInstructorAsync(loginDto);
 
-        if(successfulLogin) 
-            await DisplayAlertAsync(AppText.LoginSuccessTitle, AppText.LoginSuccessMessage, AppText.LoginSuccessButton);
+        if(!successfulLogin)
+            await DisplayAlertAsync("Login", "Login failed", "OK");
         else
-        {
-            // TODO: Find a proper error message
-            await DisplayAlertAsync(AppText.LoginMissingInfoTitle, AppText.LoginMissingInfoMessage, AppText.CommonOk);
-        }
+            await DisplayAlertAsync("Login", "Login Successful", "OK");
     }
 
     private static Task DisplayAlertAsync(string title, string message, string cancel)

@@ -1,4 +1,4 @@
-﻿using DrivingSchoolApp.DTOs.ValueObject;
+using DrivingSchoolApp.DTOs.ValueObject;
 
 namespace DrivingSchoolApp.DTOs.DrivingLesson;
 

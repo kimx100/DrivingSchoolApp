@@ -2,6 +2,7 @@
 using Android.Runtime;
 
 namespace DrivingSchoolApp;
+
 #if DEBUG
 [Application(UsesCleartextTraffic = true)]
 #else
