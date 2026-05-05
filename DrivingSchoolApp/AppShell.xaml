@@ -19,8 +19,8 @@
             ContentTemplate="{DataTemplate pages:SavedRoutesPage}" />
 
         <ShellContent
-            Route="login"
-            Title="{x:Static text:AppText.ShellLoginTabTitle}"
-            ContentTemplate="{DataTemplate pages:LogInPage}" />
+            Route="theory"
+            Title="Theory"
+            ContentTemplate="{DataTemplate pages:TheoryLessonPage}" />
     </TabBar>
 </Shell>
