@@ -22,8 +22,7 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
-        // Localhost on Andriod
-        builder.Configuration["api_base_url"] = "http://10.0.2.2:5259";
+        builder.Configuration["api_base_url"] = "http://130.225.170.67:5259";
         
         builder.Services
             .AddScoped<IAdminService, AdminService>()
