@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:mapsui="clr-namespace:Mapsui.UI.Maui;assembly=Mapsui.UI.Maui"
     xmlns:text="clr-namespace:DrivingSchoolApp.Localization"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     Title="{x:Static text:AppText.RouteDetailPageTitle}"
     BackgroundColor="{StaticResource PageBackground}">
 
@@ -26,6 +27,124 @@
             x:Name="RouteMapView"
             IsZoomButtonVisible="True"
             IsMyLocationButtonVisible="False" />
+
+        <Grid
+            Padding="16"
+            VerticalOptions="End">
+
+            <Border
+                x:Name="RouteInfoOverlay"
+                IsVisible="False"
+                BackgroundColor="#F7FFFFFF"
+                Stroke="{StaticResource InputBorder}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 22"
+                Padding="14">
+
+                <VerticalStackLayout Spacing="10">
+                    <Label
+                        Text="Saved route"
+                        FontSize="17"
+                        FontAttributes="Bold"
+                        TextColor="{StaticResource Black}" />
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="8">
+                        <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="2">
+                            <Label Text="Date" FontSize="11" TextColor="{StaticResource Gray600}" />
+                            <Label x:Name="RouteDateLabel" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource Black}" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="2">
+                            <Label Text="Duration" FontSize="11" TextColor="{StaticResource Gray600}" />
+                            <Label x:Name="RouteDurationLabel" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource Black}" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="2">
+                            <Label Text="Distance" FontSize="11" TextColor="{StaticResource Gray600}" />
+                            <Label x:Name="RouteDistanceLabel" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource Black}" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="2">
+                            <Label Text="Time" FontSize="11" TextColor="{StaticResource Gray600}" />
+                            <Label x:Name="RouteTimeLabel" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource Black}" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="2" Grid.Column="0" Spacing="2">
+                            <Label Text="Student" FontSize="11" TextColor="{StaticResource Gray600}" />
+                            <Label x:Name="RouteStudentLabel" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource Black}" LineBreakMode="TailTruncation" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Row="2" Grid.Column="1" Spacing="2">
+                            <Label Text="Map" FontSize="11" TextColor="{StaticResource Gray600}" />
+                            <Label x:Name="RouteSourceLabel" FontSize="13" FontAttributes="Bold" TextColor="{StaticResource Black}" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <BoxView HeightRequest="1" BackgroundColor="{StaticResource InputBorder}" />
+
+                    <VerticalStackLayout Spacing="3">
+                        <Label Text="Objectives" FontSize="11" TextColor="{StaticResource Gray600}" />
+                        <Label
+                            x:Name="RouteObjectivesLabel"
+                            FontSize="13"
+                            MaxLines="2"
+                            LineBreakMode="TailTruncation"
+                            TextColor="{StaticResource Black}" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label
+                            x:Name="RouteSignatureStatusLabel"
+                            FontSize="12"
+                            FontAttributes="Bold"
+                            TextColor="{StaticResource Primary}" />
+
+                        <Grid
+                            x:Name="SignaturePreviewGrid"
+                            ColumnDefinitions="*,*"
+                            ColumnSpacing="10"
+                            IsVisible="False">
+
+                            <VerticalStackLayout
+                                x:Name="InstructorSignaturePreviewContainer"
+                                Grid.Column="0"
+                                Spacing="3">
+                                <Label Text="Instructor" FontSize="11" TextColor="{StaticResource Gray600}" />
+                                <Border Padding="4" BackgroundColor="{StaticResource White}" Stroke="{StaticResource InputBorder}" StrokeThickness="1">
+                                    <toolkit:DrawingView
+                                        x:Name="InstructorSignaturePreview"
+                                        HeightRequest="48"
+                                        InputTransparent="True"
+                                        IsMultiLineModeEnabled="True"
+                                        ShouldClearOnFinish="False"
+                                        BackgroundColor="{StaticResource White}"
+                                        LineColor="{StaticResource Black}"
+                                        LineWidth="3" />
+                                </Border>
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout
+                                x:Name="StudentSignaturePreviewContainer"
+                                Grid.Column="1"
+                                Spacing="3">
+                                <Label Text="Student" FontSize="11" TextColor="{StaticResource Gray600}" />
+                                <Border Padding="4" BackgroundColor="{StaticResource White}" Stroke="{StaticResource InputBorder}" StrokeThickness="1">
+                                    <toolkit:DrawingView
+                                        x:Name="StudentSignaturePreview"
+                                        HeightRequest="48"
+                                        InputTransparent="True"
+                                        IsMultiLineModeEnabled="True"
+                                        ShouldClearOnFinish="False"
+                                        BackgroundColor="{StaticResource White}"
+                                        LineColor="{StaticResource Black}"
+                                        LineWidth="3" />
+                                </Border>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
 
         <Grid
             x:Name="LoadingOverlay"

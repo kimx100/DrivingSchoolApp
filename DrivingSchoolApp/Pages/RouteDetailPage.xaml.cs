@@ -1,4 +1,8 @@
 using System.Linq;
+using System.Collections.ObjectModel;
+using CommunityToolkit.Maui.Core;
+using CommunityToolkit.Maui.Core.Views;
+using CommunityToolkit.Maui.Views;
 using DrivingSchoolApp.Localization;
 using DrivingSchoolApp.Models;
 using DrivingSchoolApp.Services;
@@ -6,6 +10,7 @@ using Mapsui;
 using Mapsui.Projections;
 using Mapsui.Tiling;
 using Mapsui.UI.Maui;
+using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Storage;
 
 namespace DrivingSchoolApp.Pages;
@@ -88,6 +93,7 @@ public partial class RouteDetailPage : ContentPage
             : _session.StudentName;
 
         DrawBestAvailableRoute();
+        UpdateRouteInfoOverlay();
         UpdateSnapToolbarText();
 
         if (_snapState?.Status == RouteSnapWorkStatus.ReadyToView)
@@ -201,13 +207,15 @@ public partial class RouteDetailPage : ContentPage
         RouteMapView.Pins.Add(new Pin
         {
             Label = AppText.RouteDetailStartPin,
-            Position = first
+            Position = first,
+            Scale = RouteMapViewportHelper.RouteEndpointPinScale
         });
 
         RouteMapView.Pins.Add(new Pin
         {
             Label = AppText.RouteDetailEndPin,
-            Position = last
+            Position = last,
+            Scale = RouteMapViewportHelper.RouteEndpointPinScale
         });
 
         ZoomToPositions(positions);
@@ -215,31 +223,110 @@ public partial class RouteDetailPage : ContentPage
 
     private void ZoomToPositions(IReadOnlyList<Position> positions)
     {
-        if (RouteMapView.Map is null || positions.Count == 0)
-            return;
+        RouteMapViewportHelper.FitRoute(
+            RouteMapView,
+            positions,
+            accountForBottomOverlay: true,
+            debugSource: HasUsableSnappedGeometry() ? "RouteDetailPage Snapped" : "RouteDetailPage Raw");
+    }
 
-        var world = positions
-            .Select(p => SphericalMercator.FromLonLat(p.Longitude, p.Latitude))
-            .ToList();
-
-        double minX = double.PositiveInfinity;
-        double minY = double.PositiveInfinity;
-        double maxX = double.NegativeInfinity;
-        double maxY = double.NegativeInfinity;
-
-        foreach (var w in world)
+    private void UpdateRouteInfoOverlay()
+    {
+        if (_session is null)
         {
-            var x = w.Item1;
-            var y = w.Item2;
-
-            if (x < minX) minX = x;
-            if (y < minY) minY = y;
-            if (x > maxX) maxX = x;
-            if (y > maxY) maxY = y;
+            RouteInfoOverlay.IsVisible = false;
+            return;
         }
 
-        var box = new MRect(minX, minY, maxX, maxY);
-        RouteMapView.Map.Navigator.ZoomToBox(box);
+        var duration = _session.EndedAt - _session.StartedAt;
+        var distance = _session.TotalDistanceMeters ?? RouteSessionMetrics.CalculateDistanceMeters(_session.Points);
+        var hasInstructorSignature = HasSavedSignature(_session.InstructorSignature);
+        var hasStudentSignature = HasSavedSignature(_session.StudentSignature);
+
+        RouteDateLabel.Text = _session.StartedAt.LocalDateTime.ToString("dd MMM yyyy");
+        RouteDurationLabel.Text = RouteSessionMetrics.FormatDuration(duration);
+        RouteDistanceLabel.Text = RouteSessionMetrics.FormatDistance(distance);
+        RouteTimeLabel.Text =
+            $"{_session.StartedAt.LocalDateTime:HH:mm} - {_session.EndedAt.LocalDateTime:HH:mm}";
+        RouteStudentLabel.Text = string.IsNullOrWhiteSpace(_session.StudentName)
+            ? "Not assigned"
+            : _session.StudentName;
+        RouteSourceLabel.Text = HasUsableSnappedGeometry()
+            ? "Snapped"
+            : "Raw GPS";
+        RouteObjectivesLabel.Text = FormatCompletedItems(_session.CompletedItems);
+
+        RouteSignatureStatusLabel.Text = FormatSignatureStatus(hasInstructorSignature, hasStudentSignature);
+
+        RestoreSignature(InstructorSignaturePreview, _session.InstructorSignature);
+        RestoreSignature(StudentSignaturePreview, _session.StudentSignature);
+
+        InstructorSignaturePreviewContainer.IsVisible = hasInstructorSignature;
+        StudentSignaturePreviewContainer.IsVisible = hasStudentSignature;
+        SignaturePreviewGrid.IsVisible = hasInstructorSignature || hasStudentSignature;
+        RouteInfoOverlay.IsVisible = true;
+    }
+
+    private static string FormatCompletedItems(IReadOnlyList<CompletedLessonItem>? completedItems)
+    {
+        if (completedItems is not { Count: > 0 })
+            return "No objectives saved.";
+
+        var catalog = LessonCatalogService.GetAll().ToDictionary(x => x.ItemType);
+
+        return string.Join(", ",
+            completedItems
+                .OrderBy(x => x.CompletedAt)
+                .Select(x =>
+                {
+                    if (!catalog.TryGetValue(x.ItemType, out var definition))
+                        return x.ItemType.ToString();
+
+                    return definition.DisplayNameDa ?? definition.DisplayName;
+                }));
+    }
+
+    private static string FormatSignatureStatus(bool hasInstructorSignature, bool hasStudentSignature)
+    {
+        return (hasInstructorSignature, hasStudentSignature) switch
+        {
+            (true, true) => "Signatures saved: instructor and student",
+            (true, false) => "Signature saved: instructor only",
+            (false, true) => "Signature saved: student only",
+            _ => "No signatures saved"
+        };
+    }
+
+    private static bool HasSavedSignature(LessonSignature? signature)
+        => signature?.Strokes?.Any(x => x.Points.Count > 1) == true;
+
+    private static void RestoreSignature(DrawingView signaturePreview, LessonSignature? signature)
+    {
+        signaturePreview.Lines = new ObservableCollection<IDrawingLine>();
+
+        if (!HasSavedSignature(signature))
+            return;
+
+        var lines = new ObservableCollection<IDrawingLine>();
+
+        foreach (var stroke in signature!.Strokes)
+        {
+            if (stroke.Points.Count == 0)
+                continue;
+
+            var line = new DrawingLine
+            {
+                LineColor = Colors.Black,
+                LineWidth = stroke.LineWidth <= 0 ? 3f : stroke.LineWidth
+            };
+
+            foreach (var point in stroke.Points)
+                line.Points.Add(new PointF(point.X, point.Y));
+
+            lines.Add(line);
+        }
+
+        signaturePreview.Lines = lines;
     }
 
     private async void SnapToolbarItem_Clicked(object? sender, EventArgs e)
@@ -272,6 +359,7 @@ public partial class RouteDetailPage : ContentPage
             _snapState = await RouteSnapBackgroundProcessor.GetStateAsync(_session.Id);
 
             DrawBestAvailableRoute();
+            UpdateRouteInfoOverlay();
             UpdateSnapToolbarText();
 
             await DisplayAlertAsync(

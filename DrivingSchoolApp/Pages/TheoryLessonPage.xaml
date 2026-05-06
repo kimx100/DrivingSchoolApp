@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="DrivingSchoolApp.Pages.TheoryLessonPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    Title="Theory"
+    BackgroundColor="{StaticResource PageBackground}">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Padding="0,16,0,0">
+        <Grid
+            Grid.Row="0"
+            Padding="16,0"
+            ColumnDefinitions="*,Auto"
+            ColumnSpacing="12">
+
+            <VerticalStackLayout Spacing="4">
+                <Label
+                    Text="Theory lesson"
+                    FontSize="24"
+                    FontAttributes="Bold"
+                    TextColor="{StaticResource Black}" />
+
+                <Label
+                    Text="Students in your driving school"
+                    FontSize="13"
+                    TextColor="{StaticResource Gray600}" />
+            </VerticalStackLayout>
+
+            <Button
+                x:Name="RefreshButton"
+                Grid.Column="1"
+                Text="Refresh"
+                Clicked="RefreshButton_Clicked"
+                VerticalOptions="Center" />
+        </Grid>
+
+        <Button
+            x:Name="StartLessonButton"
+            Grid.Row="1"
+            Margin="16,12,16,0"
+            Text="Start theory lesson"
+            Clicked="StartLessonButton_Clicked" />
+
+        <VerticalStackLayout
+            Grid.Row="2"
+            Padding="16,12,16,4"
+            Spacing="8">
+
+            <ActivityIndicator
+                x:Name="LoadingIndicator"
+                IsVisible="False"
+                IsRunning="False"
+                Color="{StaticResource Primary}"
+                HorizontalOptions="Center" />
+
+            <Label
+                x:Name="StatusLabel"
+                IsVisible="False"
+                FontSize="13"
+                HorizontalTextAlignment="Center"
+                TextColor="{StaticResource Gray600}" />
+        </VerticalStackLayout>
+
+        <CollectionView
+            x:Name="StudentsCollectionView"
+            Grid.Row="3"
+            SelectionMode="None"
+            Margin="0,4,0,0">
+
+            <CollectionView.EmptyView>
+                <VerticalStackLayout Padding="24" Spacing="8">
+                    <Label
+                        Text="No students found"
+                        FontSize="18"
+                        FontAttributes="Bold"
+                        HorizontalTextAlignment="Center"
+                        TextColor="{StaticResource Black}" />
+
+                    <Label
+                        Text="Students from your driving school will appear here."
+                        FontSize="13"
+                        HorizontalTextAlignment="Center"
+                        TextColor="{StaticResource Gray600}" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border
+                        Margin="16,8,16,0"
+                        Padding="14"
+                        Stroke="{StaticResource InputBorder}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 18"
+                        BackgroundColor="{StaticResource White}">
+
+                        <VerticalStackLayout Spacing="4">
+                            <Label
+                                FontSize="16"
+                                FontAttributes="Bold"
+                                TextColor="{StaticResource Black}">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="{Binding StudentName.FirstName}" />
+                                        <Span Text=" " />
+                                        <Span Text="{Binding StudentName.LastName}" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+
+                            <Label
+                                Text="{Binding EmailAddress}"
+                                FontSize="13"
+                                TextColor="{StaticResource Gray600}" />
+
+                            <Label
+                                Text="{Binding PhoneNumber}"
+                                FontSize="13"
+                                TextColor="{StaticResource Gray600}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <ScrollView
+            x:Name="LessonFlowView"
+            Grid.Row="3"
+            IsVisible="False"
+            Margin="0,4,0,0">
+
+            <VerticalStackLayout Padding="16,8,16,24" Spacing="12">
+                <Label
+                    x:Name="StepTitleLabel"
+                    FontSize="18"
+                    FontAttributes="Bold"
+                    TextColor="{StaticResource Black}" />
+
+                <Label
+                    x:Name="StepStatusLabel"
+                    FontSize="13"
+                    TextColor="{StaticResource Gray600}" />
+
+                <Border
+                    x:Name="InstructorStepCard"
+                    Padding="14"
+                    Stroke="{StaticResource InputBorder}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 18"
+                    BackgroundColor="{StaticResource White}">
+
+                    <VerticalStackLayout Spacing="10">
+                        <Label
+                            Text="Instructor signature required"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            TextColor="{StaticResource Black}" />
+
+                        <toolkit:DrawingView
+                            x:Name="InstructorSignaturePad"
+                            HeightRequest="180"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}"
+                            IsMultiLineModeEnabled="True"
+                            ShouldClearOnFinish="False"
+                            LineColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}"
+                            LineWidth="4" />
+
+                        <Label
+                            x:Name="InstructorSignatureStatusLabel"
+                            Text="Draw instructor signature above."
+                            FontSize="12"
+                            TextColor="{StaticResource Gray600}" />
+
+                        <Button
+                            Text="Clear signature"
+                            BackgroundColor="{StaticResource Gray300}"
+                            TextColor="{StaticResource Black}"
+                            Clicked="ClearInstructorSignatureButton_Clicked" />
+
+                        <Button
+                            Text="Save instructor signature"
+                            Clicked="SaveInstructorSignatureButton_Clicked" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border
+                    x:Name="StudentStepCard"
+                    IsVisible="False"
+                    Padding="14"
+                    Stroke="{StaticResource InputBorder}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 18"
+                    BackgroundColor="{StaticResource White}">
+
+                    <VerticalStackLayout Spacing="10">
+                        <Label
+                            x:Name="CurrentStudentNameLabel"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            TextColor="{StaticResource Black}" />
+
+                        <Label
+                            x:Name="CurrentStudentEmailLabel"
+                            FontSize="13"
+                            TextColor="{StaticResource Gray600}" />
+
+                        <Label
+                            x:Name="CurrentStudentPhoneLabel"
+                            FontSize="13"
+                            TextColor="{StaticResource Gray600}" />
+
+                        <toolkit:DrawingView
+                            x:Name="StudentSignaturePad"
+                            HeightRequest="180"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}"
+                            IsMultiLineModeEnabled="True"
+                            ShouldClearOnFinish="False"
+                            LineColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}"
+                            LineWidth="4" />
+
+                        <Label
+                            x:Name="StudentSignatureStatusLabel"
+                            Text="Draw student signature above."
+                            FontSize="12"
+                            TextColor="{StaticResource Gray600}" />
+
+                        <Button
+                            Text="Clear signature"
+                            BackgroundColor="{StaticResource Gray300}"
+                            TextColor="{StaticResource Black}"
+                            Clicked="ClearStudentSignatureButton_Clicked" />
+
+                        <Button
+                            Text="Save student signature"
+                            Clicked="SaveStudentSignatureButton_Clicked" />
+
+                        <Button
+                            Text="Skip student"
+                            BackgroundColor="{StaticResource Gray300}"
+                            TextColor="{StaticResource Black}"
+                            Clicked="SkipStudentButton_Clicked" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border
+                    x:Name="SummaryStepCard"
+                    IsVisible="False"
+                    Padding="14"
+                    Stroke="{StaticResource InputBorder}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 18"
+                    BackgroundColor="{StaticResource White}">
+
+                    <VerticalStackLayout Spacing="8">
+                        <Label
+                            Text="Summary"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            TextColor="{StaticResource Black}" />
+
+                        <Label
+                            x:Name="TotalStudentsLabel"
+                            FontSize="13"
+                            TextColor="{StaticResource Gray600}" />
+
+                        <Label
+                            x:Name="SignedStudentsLabel"
+                            FontSize="13"
+                            TextColor="{StaticResource Gray600}" />
+
+                        <Label
+                            x:Name="SkippedStudentsLabel"
+                            FontSize="13"
+                            TextColor="{StaticResource Gray600}" />
+
+                        <Label
+                            x:Name="InstructorSignatureCapturedLabel"
+                            FontSize="13"
+                            TextColor="{StaticResource Gray600}" />
+
+                        <Button
+                            Margin="0,8,0,0"
+                            Text="Finish"
+                            Clicked="FinishButton_Clicked" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>
