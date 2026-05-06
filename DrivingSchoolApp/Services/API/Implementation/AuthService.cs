@@ -9,6 +9,9 @@ namespace DrivingSchoolApp.Services.API.Implementation;
 
 public class AuthService(IConfiguration config) : ApiService(config["api_base_url"]!), IAuthService
 {
+    private const string AccessTokenKey = "access_token";
+    private const string RefreshTokenKey = "refresh_token";
+
     private async Task<bool> LoginAsync(LoginDto loginDto, string userType)
     {
         var request = new RestRequest($"/auth/login/{userType}", Method.Post);
@@ -21,8 +24,8 @@ public class AuthService(IConfiguration config) : ApiService(config["api_base_ur
 
         var token = response.Data!;
 
-        await SecureStorage.SetAsync("access_token", token.AccessToken!);
-        await SecureStorage.SetAsync("refresh_token", token.RefreshToken!);
+        await SecureStorage.SetAsync(AccessTokenKey, token.AccessToken!);
+        await SecureStorage.SetAsync(RefreshTokenKey, token.RefreshToken!);
 
         return true;
     }
@@ -40,6 +43,19 @@ public class AuthService(IConfiguration config) : ApiService(config["api_base_ur
     public async Task<bool> LoginStudentAsync(LoginDto loginDto)
     {
         return await LoginAsync(loginDto, "student");
+    }
+
+    public async Task<bool> HasSavedAccessTokenAsync()
+    {
+        var token = await SecureStorage.GetAsync(AccessTokenKey);
+        return !string.IsNullOrWhiteSpace(token);
+    }
+
+    public Task LogoutAsync()
+    {
+        SecureStorage.Remove(AccessTokenKey);
+        SecureStorage.Remove(RefreshTokenKey);
+        return Task.CompletedTask;
     }
 
     public async Task<RestResponse<T>> GetSelfAsync<T>() where T : IUserDto

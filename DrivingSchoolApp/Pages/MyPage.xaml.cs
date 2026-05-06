@@ -101,7 +101,22 @@ public partial class MyPage : ContentPage
 
     private async void LogoutButton_Clicked(object? sender, EventArgs e)
     {
-        // TODO: Real logout should clear stored tokens and return to LogInPage.
-        await DisplayAlertAsync("Log ud", "Log ud er ikke implementeret endnu.", "OK");
+        var confirmed = await DisplayAlertAsync("Log ud", "Vil du logge ud?", "Log ud", "Annuller");
+        if (!confirmed)
+            return;
+
+        try
+        {
+            var services = Handler?.MauiContext?.Services
+                           ?? throw new InvalidOperationException("Application services are not available.");
+
+            var authService = services.GetRequiredService<IAuthService>();
+            await authService.LogoutAsync();
+            await AppNavigation.OpenLogInPageAsync(authService);
+        }
+        catch
+        {
+            await DisplayAlertAsync("Log ud", "Kunne ikke logge ud. Prøv igen.", "OK");
+        }
     }
 }

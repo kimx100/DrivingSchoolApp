@@ -11,6 +11,8 @@ public interface IAuthService
     Task<bool> LoginAdminAsync(LoginDto loginDto);
     Task<bool> LoginInstructorAsync(LoginDto loginDto);
     Task<bool> LoginStudentAsync(LoginDto loginDto);
+    Task<bool> HasSavedAccessTokenAsync();
+    Task LogoutAsync();
 
     Task<RestResponse<T>> GetSelfAsync<T>() where T : IUserDto;
 }

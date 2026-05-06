@@ -7,7 +7,7 @@ namespace DrivingSchoolApp.Pages;
 
 public partial class LogInPage : ContentPage
 {
-    private IAuthService _authService;
+    private readonly IAuthService _authService;
     private bool _isLoggingIn;
 
     public LogInPage(IAuthService authService)
@@ -148,6 +148,19 @@ internal static class AppNavigation
             if (window is not null)
             {
                 window.Page = new global::DrivingSchoolApp.AppShell();
+            }
+        });
+    }
+
+    public static Task OpenLogInPageAsync(IAuthService authService)
+    {
+        return MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            var window = Application.Current?.Windows.FirstOrDefault();
+
+            if (window is not null)
+            {
+                window.Page = new LogInPage(authService);
             }
         });
     }

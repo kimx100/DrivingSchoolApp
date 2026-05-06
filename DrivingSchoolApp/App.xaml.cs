@@ -16,6 +16,22 @@ public partial class App : Application
 
     protected override Window CreateWindow(IActivationState? activationState)
     {
-        return new Window(new LogInPage(_authService));
+        var window = new Window(new ContentPage());
+        _ = SetInitialPageAsync(window);
+        return window;
+    }
+
+    private async Task SetInitialPageAsync(Window window)
+    {
+        try
+        {
+            window.Page = await _authService.HasSavedAccessTokenAsync()
+                ? new AppShell()
+                : new LogInPage(_authService);
+        }
+        catch
+        {
+            window.Page = new LogInPage(_authService);
+        }
     }
 }
