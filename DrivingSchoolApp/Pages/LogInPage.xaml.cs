@@ -38,7 +38,16 @@ public partial class LogInPage : ContentPage
         {
             SetLoginBusy(true);
             
-            await _authService.LoginInstructorAsync(new LoginDto(email, password));
+            var loginSucceeded = await _authService.LoginInstructorAsync(new LoginDto(email, password));
+            if (!loginSucceeded)
+            {
+                await DisplayAlertAsync(
+                    "Login failed",
+                    "Login failed. Please check your email and password.",
+                    AppText.CommonOk);
+                return;
+            }
+
             await AppNavigation.OpenAppShellAsync();
         }
         catch (Exception ex)

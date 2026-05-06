@@ -24,7 +24,7 @@ public static class MauiProgram
 
         builder.Configuration["api_base_url"] = "http://130.225.170.67:5259";
         
-        builder.Services
+        builder.Services 
             .AddScoped<IAdminService, AdminService>()
             .AddScoped<IAuthService, AuthService>()
             .AddScoped<IDrivingSchoolService, DrivingSchoolService>()

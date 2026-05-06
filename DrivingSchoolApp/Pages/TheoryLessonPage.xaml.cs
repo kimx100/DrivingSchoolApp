@@ -2,63 +2,17 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Maui.Core.Views;
 using CommunityToolkit.Maui.Views;
+using DrivingSchoolApp.DTOs.Instructor;
 using DrivingSchoolApp.DTOs.Student;
-using DrivingSchoolApp.DTOs.ValueObject;
 using DrivingSchoolApp.Models;
-using DrivingSchoolApp.Services;
+using DrivingSchoolApp.Services.API;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DrivingSchoolApp.Pages;
 
 public partial class TheoryLessonPage : ContentPage
 {
-#if DEBUG
-    // -----------------------------------------------------------------------------
-    // DEBUG PLACEHOLDER STUDENTS
-    // Temporary data for debugging the Theory page before real login/API
-    // is connected. Set UsePlaceholderStudents to true to force placeholder data.
-    // -----------------------------------------------------------------------------
-    private const bool UsePlaceholderStudents = false;
-
-    private static readonly List<StudentDto> PlaceholderStudents = new()
-    {
-        new(
-            Guid.Parse("bb4a35a8-4f85-47e3-b021-0cd0c971e3c4"),
-            Guid.Parse("96a2174c-7037-4ab9-b45b-7864fbced9ce"),
-            new NameDto("Emma", "Jensen"),
-            "emma.jensen@example.test",
-            "+45 22 14 63 90"),
-        new(
-            Guid.Parse("6fc78b5e-6f3c-43ea-9e79-e64f04093843"),
-            Guid.Parse("96a2174c-7037-4ab9-b45b-7864fbced9ce"),
-            new NameDto("Noah", "Madsen"),
-            "noah.madsen@example.test",
-            "+45 31 82 47 05"),
-        new(
-            Guid.Parse("6c619aa1-4fdc-4af0-b111-d949f4625ed9"),
-            Guid.Parse("96a2174c-7037-4ab9-b45b-7864fbced9ce"),
-            new NameDto("Sofia", "Larsen"),
-            "sofia.larsen@example.test",
-            "+45 42 71 15 38"),
-        new(
-            Guid.Parse("7c780610-28d0-49a3-97b1-9b6843252d12"),
-            Guid.Parse("96a2174c-7037-4ab9-b45b-7864fbced9ce"),
-            new NameDto("Lucas", "Nielsen"),
-            "lucas.nielsen@example.test",
-            "+45 53 64 28 11"),
-        new(
-            Guid.Parse("dfd6628c-d90a-4d4a-8a24-ad1da2f5d415"),
-            Guid.Parse("96a2174c-7037-4ab9-b45b-7864fbced9ce"),
-            new NameDto("Freja", "Andersen"),
-            "freja.andersen@example.test",
-            "+45 61 92 74 36")
-    };
-
-    private static bool ShouldUsePlaceholderStudents()
-        => UsePlaceholderStudents;
-#endif
-
     private readonly ObservableCollection<StudentDto> _students = new();
-    private readonly TheoryLessonStudentService _studentService = new();
     private readonly List<TheoryStudentAttendanceItem> _attendanceItems = new();
     private bool _isLoading;
     private bool _lessonStarted;
@@ -214,21 +168,22 @@ public partial class TheoryLessonPage : ContentPage
         try
         {
             _students.Clear();
+            
+            var services = Handler?.MauiContext?.Services
+                           ?? throw new InvalidOperationException("Application services are not available.");
 
-#if DEBUG
-            if (ShouldUsePlaceholderStudents())
-            {
-                foreach (var student in OrderStudents(PlaceholderStudents))
-                    _students.Add(student);
+            var authService = services.GetRequiredService<IAuthService>();
+            var drivingSchoolService = services.GetRequiredService<IDrivingSchoolService>();
 
-                ShowStatus("Showing placeholder students for debug.");
-                return;
-            }
-#endif
+            var instructorResult = await authService.GetSelfAsync<InstructorDto>();
+            if (!instructorResult.IsSuccessful || instructorResult.Data is null)
+                throw new InvalidOperationException("Could not load the current instructor.");
 
-            var students = await _studentService.GetStudentsForCurrentInstructorAsync();
+            var studentsResult = await drivingSchoolService.GetAllStudentsFromSchoolAsync(instructorResult.Data.SchoolId);
+            if (!studentsResult.IsSuccessful)
+                throw new InvalidOperationException("Could not load students from the driving school.");
 
-            foreach (var student in OrderStudents(students))
+            foreach (var student in OrderStudents(studentsResult.Data ?? []))
                 _students.Add(student);
 
             ShowStatus(_students.Count == 0 ? "No students found." : string.Empty);
