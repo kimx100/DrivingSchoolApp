@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="DrivingSchoolApp.Pages.MyPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Min side"
+    BackgroundColor="{StaticResource PageBackground}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+            <Border Padding="16">
+                <VerticalStackLayout Spacing="10">
+                    <Label
+                        Text="Min side"
+                        FontSize="24"
+                        FontAttributes="Bold"
+                        TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource PrimaryTextDark}}" />
+
+                    <Label
+                        x:Name="ProfileStatusLabel"
+                        FontSize="13"
+                        TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource SecondaryTextDark}}" />
+
+                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="8">
+                        <Label Grid.Row="0" Grid.Column="0" Text="Navn" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource SecondaryTextDark}}" />
+                        <Label Grid.Row="0" Grid.Column="1" x:Name="InstructorNameLabel" TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource PrimaryTextDark}}" />
+
+                        <Label Grid.Row="1" Grid.Column="0" Text="E-mail" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource SecondaryTextDark}}" />
+                        <Label Grid.Row="1" Grid.Column="1" x:Name="InstructorEmailLabel" TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource PrimaryTextDark}}" />
+
+                        <Label Grid.Row="2" Grid.Column="0" Text="Telefon" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource SecondaryTextDark}}" />
+                        <Label Grid.Row="2" Grid.Column="1" x:Name="InstructorPhoneLabel" TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource PrimaryTextDark}}" />
+
+                        <Label Grid.Row="3" Grid.Column="0" Text="Køreskole" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource SecondaryTextDark}}" />
+                        <Label Grid.Row="3" Grid.Column="1" x:Name="DrivingSchoolLabel" TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource PrimaryTextDark}}" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Padding="16">
+                <VerticalStackLayout Spacing="12">
+                    <Label
+                        Text="Standardpriser"
+                        FontSize="18"
+                        FontAttributes="Bold"
+                        TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource PrimaryTextDark}}" />
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Standardpris for kørelektion" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource SecondaryTextDark}}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <Entry
+                                x:Name="DrivingLessonPriceEntry"
+                                Keyboard="Numeric"
+                                ReturnType="Done"
+                                BackgroundColor="{StaticResource White}"
+                                TextColor="{StaticResource Black}"
+                                PlaceholderColor="{StaticResource Gray600}"
+                                Completed="PriceEntry_Completed" />
+                            <Label Grid.Column="1" Text="DKK" VerticalOptions="Center" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource SecondaryTextDark}}" />
+                        </Grid>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Standardpris for teorilektion" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource SecondaryTextDark}}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <Entry
+                                x:Name="TheoryLessonPriceEntry"
+                                Keyboard="Numeric"
+                                ReturnType="Done"
+                                BackgroundColor="{StaticResource White}"
+                                TextColor="{StaticResource Black}"
+                                PlaceholderColor="{StaticResource Gray600}"
+                                Completed="PriceEntry_Completed" />
+                            <Label Grid.Column="1" Text="DKK" VerticalOptions="Center" TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource SecondaryTextDark}}" />
+                        </Grid>
+                    </VerticalStackLayout>
+
+                    <Button
+                        Text="Gem priser"
+                        Clicked="SavePricesButton_Clicked" />
+
+                    <Label
+                        x:Name="PriceStatusLabel"
+                        FontSize="13"
+                        TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource SecondaryTextDark}}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Button
+                Text="Log ud"
+                BackgroundColor="{StaticResource Gray300}"
+                TextColor="{StaticResource Black}"
+                Clicked="LogoutButton_Clicked" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

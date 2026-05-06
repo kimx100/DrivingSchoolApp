@@ -24,6 +24,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(nameof(RouteDetailPage), typeof(RouteDetailPage));
         Routing.RegisterRoute(nameof(RouteConfirmationPage), typeof(RouteConfirmationPage));
         Routing.RegisterRoute(nameof(SavedRoutesPage), typeof(SavedRoutesPage));
+        Routing.RegisterRoute(nameof(MyPage), typeof(MyPage));
         
         _trackingCoordinator.SnapshotChanged += TrackingCoordinator_SnapshotChanged;
         ApplyChrome(_trackingCoordinator.GetSnapshot().IsTracking);

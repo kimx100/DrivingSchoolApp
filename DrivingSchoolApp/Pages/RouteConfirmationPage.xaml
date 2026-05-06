@@ -171,20 +171,53 @@
             </Border>
 
             <Border Padding="16">
+                <VerticalStackLayout Spacing="12">
+                    <Label
+                        Text="Pris"
+                        FontSize="18"
+                        FontAttributes="Bold" />
+
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Pris for kørelektion" FontSize="12" TextColor="{StaticResource Gray600}" />
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <Entry
+                                x:Name="DrivingLessonPriceEntry"
+                                Keyboard="Numeric"
+                                ReturnType="Done"
+                                BackgroundColor="{StaticResource White}"
+                                TextColor="{StaticResource Black}"
+                                PlaceholderColor="{StaticResource Gray600}"
+                                Completed="DrivingLessonPriceEntry_Completed" />
+                            <Label Grid.Column="1" Text="DKK" VerticalOptions="Center" TextColor="{StaticResource Gray600}" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Padding="16">
                 <VerticalStackLayout Spacing="16">
                     <Label
                         Text="{x:Static text:AppText.RouteReviewInstructorSignoffHeader}"
                         FontSize="18"
                         FontAttributes="Bold" />
 
-                    <toolkit:DrawingView
-                        x:Name="InstructorSignaturePad"
-                        HeightRequest="180"
-                        BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}"
-                        IsMultiLineModeEnabled="True"
-                        ShouldClearOnFinish="False"
-                        LineColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}"
-                        LineWidth="4" />
+                    <Border
+                        Padding="4"
+                        HeightRequest="190"
+                        BackgroundColor="{StaticResource White}"
+                        Stroke="{StaticResource InputBorder}"
+                        StrokeThickness="1">
+                        <toolkit:DrawingView
+                            x:Name="InstructorSignaturePad"
+                            HeightRequest="180"
+                            InputTransparent="False"
+                            IsEnabled="True"
+                            BackgroundColor="{StaticResource White}"
+                            IsMultiLineModeEnabled="True"
+                            ShouldClearOnFinish="False"
+                            LineColor="{StaticResource Black}"
+                            LineWidth="4" />
+                    </Border>
 
                     <Button
                         Text="{x:Static text:AppText.RouteReviewClearInstructorSignature}"
@@ -207,14 +240,23 @@
                         FontSize="18"
                         FontAttributes="Bold" />
 
-                    <toolkit:DrawingView
-                        x:Name="StudentSignaturePad"
-                        HeightRequest="180"
-                        BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}"
-                        IsMultiLineModeEnabled="True"
-                        ShouldClearOnFinish="False"
-                        LineColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}"
-                        LineWidth="4" />
+                    <Border
+                        Padding="4"
+                        HeightRequest="190"
+                        BackgroundColor="{StaticResource White}"
+                        Stroke="{StaticResource InputBorder}"
+                        StrokeThickness="1">
+                        <toolkit:DrawingView
+                            x:Name="StudentSignaturePad"
+                            HeightRequest="180"
+                            InputTransparent="False"
+                            IsEnabled="True"
+                            BackgroundColor="{StaticResource White}"
+                            IsMultiLineModeEnabled="True"
+                            ShouldClearOnFinish="False"
+                            LineColor="{StaticResource Black}"
+                            LineWidth="4" />
+                    </Border>
 
                     <Button
                         Text="{x:Static text:AppText.RouteReviewClearStudentSignature}"
@@ -233,6 +275,7 @@
             <Button
                 Text="{x:Static text:AppText.RouteReviewFinalizeButton}"
                 Clicked="FinalizeLessonButton_Clicked" />
+
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

@@ -25,6 +25,8 @@ public partial class LogInPage : ContentPage
         if (_isLoggingIn)
             return;
 
+        UnfocusLoginEntries();
+
         var email = EmailEntry.Text?.Trim() ?? string.Empty;
         var password = PasswordEntry.Text ?? string.Empty;
 
@@ -65,6 +67,22 @@ public partial class LogInPage : ContentPage
         _isLoggingIn = isBusy;
         LoginButton.IsEnabled = !isBusy;
         LoginButton.Text = isBusy ? "Logging in..." : AppText.LoginButton;
+    }
+
+    private void EmailEntry_Completed(object? sender, EventArgs e)
+    {
+        PasswordEntry.Focus();
+    }
+
+    private void PasswordEntry_Completed(object? sender, EventArgs e)
+    {
+        PasswordEntry.Unfocus();
+    }
+
+    private void UnfocusLoginEntries()
+    {
+        EmailEntry.Unfocus();
+        PasswordEntry.Unfocus();
     }
 
     private Task DisplayLoginErrorAsync(Exception exception)

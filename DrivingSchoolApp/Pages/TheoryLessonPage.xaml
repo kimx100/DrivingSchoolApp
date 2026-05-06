@@ -3,7 +3,6 @@
     x:Class="DrivingSchoolApp.Pages.TheoryLessonPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     Title="Theory"
     BackgroundColor="{StaticResource PageBackground}">
 
@@ -35,12 +34,33 @@
                 VerticalOptions="Center" />
         </Grid>
 
-        <Button
-            x:Name="StartLessonButton"
+        <VerticalStackLayout
+            x:Name="TheoryLessonPricePanel"
             Grid.Row="1"
             Margin="16,12,16,0"
-            Text="Start theory lesson"
-            Clicked="StartLessonButton_Clicked" />
+            Spacing="10">
+
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Pris for teorilektion" FontSize="12" TextColor="{StaticResource Gray600}" />
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <Entry
+                        x:Name="TheoryLessonPriceEntry"
+                        Keyboard="Numeric"
+                        ReturnType="Done"
+                        BackgroundColor="{StaticResource White}"
+                        TextColor="{StaticResource Black}"
+                        PlaceholderColor="{StaticResource Gray600}"
+                        Completed="TheoryLessonPriceEntry_Completed"
+                        TextChanged="TheoryLessonPriceEntry_TextChanged" />
+                    <Label Grid.Column="1" Text="DKK" VerticalOptions="Center" TextColor="{StaticResource Gray600}" />
+                </Grid>
+            </VerticalStackLayout>
+
+            <Button
+                x:Name="StartLessonButton"
+                Text="Start theory lesson"
+                Clicked="StartLessonButton_Clicked" />
+        </VerticalStackLayout>
 
         <VerticalStackLayout
             Grid.Row="2"
@@ -142,6 +162,13 @@
                     FontSize="13"
                     TextColor="{StaticResource Gray600}" />
 
+                <Button
+                    x:Name="CancelLessonButton"
+                    Text="Annuller lektion"
+                    BackgroundColor="{StaticResource Gray300}"
+                    TextColor="{StaticResource Black}"
+                    Clicked="CancelLessonButton_Clicked" />
+
                 <Border
                     x:Name="InstructorStepCard"
                     Padding="14"
@@ -157,14 +184,16 @@
                             FontAttributes="Bold"
                             TextColor="{StaticResource Black}" />
 
-                        <toolkit:DrawingView
-                            x:Name="InstructorSignaturePad"
-                            HeightRequest="180"
-                            BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}"
-                            IsMultiLineModeEnabled="True"
-                            ShouldClearOnFinish="False"
-                            LineColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}"
-                            LineWidth="4" />
+                        <Border
+                            Padding="4"
+                            HeightRequest="190"
+                            BackgroundColor="{StaticResource White}"
+                            Stroke="{StaticResource InputBorder}"
+                            StrokeThickness="1">
+                            <ContentView
+                                x:Name="InstructorSignatureHost"
+                                HeightRequest="180" />
+                        </Border>
 
                         <Label
                             x:Name="InstructorSignatureStatusLabel"
@@ -210,14 +239,32 @@
                             FontSize="13"
                             TextColor="{StaticResource Gray600}" />
 
-                        <toolkit:DrawingView
-                            x:Name="StudentSignaturePad"
-                            HeightRequest="180"
-                            BackgroundColor="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}"
-                            IsMultiLineModeEnabled="True"
-                            ShouldClearOnFinish="False"
-                            LineColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}"
-                            LineWidth="4" />
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Pris for denne elev" FontSize="12" TextColor="{StaticResource Gray600}" />
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                <Entry
+                                    x:Name="CurrentStudentPriceEntry"
+                                    Keyboard="Numeric"
+                                    ReturnType="Done"
+                                    BackgroundColor="{StaticResource White}"
+                                    TextColor="{StaticResource Black}"
+                                    PlaceholderColor="{StaticResource Gray600}"
+                                    Completed="CurrentStudentPriceEntry_Completed"
+                                    TextChanged="CurrentStudentPriceEntry_TextChanged" />
+                                <Label Grid.Column="1" Text="DKK" VerticalOptions="Center" TextColor="{StaticResource Gray600}" />
+                            </Grid>
+                        </VerticalStackLayout>
+
+                        <Border
+                            Padding="4"
+                            HeightRequest="190"
+                            BackgroundColor="{StaticResource White}"
+                            Stroke="{StaticResource InputBorder}"
+                            StrokeThickness="1">
+                            <ContentView
+                                x:Name="StudentSignatureHost"
+                                HeightRequest="180" />
+                        </Border>
 
                         <Label
                             x:Name="StudentSignatureStatusLabel"
@@ -285,6 +332,7 @@
                             Clicked="FinishButton_Clicked" />
                     </VerticalStackLayout>
                 </Border>
+
             </VerticalStackLayout>
         </ScrollView>
     </Grid>

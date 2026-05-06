@@ -61,11 +61,14 @@ public partial class RouteConfirmationPage : ContentPage
         BindingContext = _viewModel;
         StudentPicker.ItemsSource = _studentPickerItems;
 
-        InstructorSignaturePad.Lines = new ObservableCollection<IDrawingLine>();
-        StudentSignaturePad.Lines = new ObservableCollection<IDrawingLine>();
+        SignatureDrawingViewHelper.EnsureDrawable(InstructorSignaturePad);
+        SignatureDrawingViewHelper.EnsureDrawable(StudentSignaturePad);
 
         InstructorSignaturePad.DrawingLineCompleted += SignaturePad_DrawingLineCompleted;
         StudentSignaturePad.DrawingLineCompleted += SignaturePad_DrawingLineCompleted;
+
+        DrivingLessonPriceEntry.Text = LessonPriceSettingsService.FormatPrice(
+            LessonPriceSettingsService.GetDefaultDrivingLessonPrice());
 
         EnsureMapInitialized();
     }
@@ -273,19 +276,24 @@ public partial class RouteConfirmationPage : ContentPage
 
     private void ClearInstructorSignatureButton_Clicked(object? sender, EventArgs e)
     {
-        InstructorSignaturePad.Clear();
+        SignatureDrawingViewHelper.Clear(InstructorSignaturePad);
         UpdateSignatureStatus();
     }
 
     private void ClearStudentSignatureButton_Clicked(object? sender, EventArgs e)
     {
-        StudentSignaturePad.Clear();
+        SignatureDrawingViewHelper.Clear(StudentSignaturePad);
         UpdateSignatureStatus();
     }
 
     private void SignaturePad_DrawingLineCompleted(object? sender, DrawingLineCompletedEventArgs e)
     {
         UpdateSignatureStatus();
+    }
+
+    private void DrivingLessonPriceEntry_Completed(object? sender, EventArgs e)
+    {
+        DrivingLessonPriceEntry.Unfocus();
     }
 
     private void UpdateSignatureStatus()
@@ -301,6 +309,8 @@ public partial class RouteConfirmationPage : ContentPage
 
     private async void FinalizeLessonButton_Clicked(object? sender, EventArgs e)
     {
+        DrivingLessonPriceEntry.Unfocus();
+
         if (_session is null)
             return;
         
@@ -341,6 +351,12 @@ public partial class RouteConfirmationPage : ContentPage
             return;
         }
 
+        if (!LessonPriceSettingsService.TryParsePrice(DrivingLessonPriceEntry.Text, out var lessonPrice))
+        {
+            await DisplayAlertAsync("Ugyldig pris", "Angiv en gyldig pris for kørelektionen.", AppText.CommonOk);
+            return;
+        }
+
         var finalizedAt = DateTimeOffset.UtcNow;
         var selectedItems = _viewModel.GetSelectedItemTypes();
 
@@ -371,7 +387,7 @@ public partial class RouteConfirmationPage : ContentPage
         
         var drivingLessonRegistry = await _session.ToRegistryDto(
             self.Data!.SchoolId,
-            new Money(1000, "DKK"), // TODO: Money should come from user input
+            LessonPriceSettingsService.CreateMoney(lessonPrice),
             (int)InstructorSignaturePad.Width,
             (int)InstructorSignaturePad.Height
         );
@@ -427,7 +443,7 @@ public partial class RouteConfirmationPage : ContentPage
 
     private static void RestoreSignature(DrawingView signaturePad, LessonSignature? signature)
     {
-        signaturePad.Clear();
+        SignatureDrawingViewHelper.Clear(signaturePad);
 
         if (signature?.Strokes is not { Count: > 0 })
             return;

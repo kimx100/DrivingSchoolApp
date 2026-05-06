@@ -9,6 +9,11 @@
 
     <TabBar>
         <ShellContent
+            Route="my-page"
+            Title="Min side"
+            ContentTemplate="{DataTemplate pages:MyPage}" />
+
+        <ShellContent
             Route="theory"
             Title="Theory"
             ContentTemplate="{DataTemplate pages:TheoryLessonPage}" />

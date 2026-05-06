@@ -6,62 +6,73 @@
     Title="{x:Static text:AppText.LoginPageTitle}"
     BackgroundColor="{StaticResource PageBackground}">
 
-    <Grid Padding="24">
-        <Grid.Background>
-            <SolidColorBrush Color="{StaticResource PageBackground}" />
-        </Grid.Background>
+    <ScrollView>
+        <Grid Padding="24" MinimumHeightRequest="520">
+            <Grid.Background>
+                <SolidColorBrush Color="{StaticResource PageBackground}" />
+            </Grid.Background>
+            <Border
+                Stroke="{StaticResource InputBorder}"
+                StrokeShape="RoundRectangle 24"
+                Padding="28"
+                VerticalOptions="Center"
+                HorizontalOptions="Fill"
+                BackgroundColor="{StaticResource White}"
+                StrokeThickness="1">
+                <Border.Shadow>
+                    <Shadow
+                        Brush="{StaticResource ShadowColorBrush}"
+                        Offset="0,8"
+                        Radius="18"
+                        Opacity="0.35" />
+                </Border.Shadow>
+                <VerticalStackLayout x:Name="LoginFormLayout" Spacing="16">
+                    <Label
+                        Text="{x:Static text:AppText.LoginHeader}"
+                        FontSize="28"
+                        FontAttributes="Bold"
+                        HorizontalOptions="Center"
+                        TextColor="{StaticResource Black}" />
 
-        <Border
-            Stroke="{StaticResource InputBorder}"
-            StrokeShape="RoundRectangle 24"
-            Padding="28"
-            VerticalOptions="Center"
-            HorizontalOptions="Fill"
-            BackgroundColor="{StaticResource White}"
-            StrokeThickness="1">
-            <Border.Shadow>
-                <Shadow
-                    Brush="{StaticResource ShadowColorBrush}"
-                    Offset="0,8"
-                    Radius="18"
-                    Opacity="0.35" />
-            </Border.Shadow>
-            <VerticalStackLayout x:Name="LoginFormLayout" Spacing="16">
-                <Label Text="{x:Static text:AppText.LoginHeader}"
-                       FontSize="28"
-                       FontAttributes="Bold"
-                       HorizontalOptions="Center"
-                       TextColor="{StaticResource Black}" />
+                    <Entry
+                        x:Name="EmailEntry"
+                        Placeholder="{x:Static text:AppText.LoginEmailPlaceholder}"
+                        Keyboard="Email"
+                        ReturnType="Next"
+                        Completed="EmailEntry_Completed"
+                        HorizontalOptions="Fill"
+                        TextColor="{StaticResource Black}"
+                        PlaceholderColor="{StaticResource Gray600}"
+                        BackgroundColor="{StaticResource White}" />
 
-                <Entry x:Name="EmailEntry"
-                       Placeholder="{x:Static text:AppText.LoginEmailPlaceholder}"
-                       Keyboard="Email"
-                       HorizontalOptions="Fill"
-                       TextColor="{StaticResource Black}"
-                       PlaceholderColor="{StaticResource Gray600}"
-                       BackgroundColor="{StaticResource White}" />
+                    <Entry
+                        x:Name="PasswordEntry"
+                        Placeholder="{x:Static text:AppText.LoginPasswordPlaceholder}"
+                        IsPassword="True"
+                        ReturnType="Done"
+                        Completed="PasswordEntry_Completed"
+                        HorizontalOptions="Fill"
+                        TextColor="{StaticResource Black}"
+                        PlaceholderColor="{StaticResource Gray600}"
+                        BackgroundColor="{StaticResource White}" />
 
-                <Entry x:Name="PasswordEntry"
-                       Placeholder="{x:Static text:AppText.LoginPasswordPlaceholder}"
-                       IsPassword="True"
-                       HorizontalOptions="Fill"
-                       TextColor="{StaticResource Black}"
-                       PlaceholderColor="{StaticResource Gray600}"
-                       BackgroundColor="{StaticResource White}" />
-
-                <Button x:Name="LoginButton"
+                    <Button
+                        x:Name="LoginButton"
                         Text="{x:Static text:AppText.LoginButton}"
                         Clicked="LoginButton_Clicked"
                         CornerRadius="12"
                         BackgroundColor="{StaticResource Primary}"
                         TextColor="{StaticResource White}" />
 
-                <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
-                    <Label Text="{x:Static text:AppText.LoginForgotPassword}"
-                           FontSize="12"
-                           TextColor="{StaticResource PrimaryDark}" />
-                </HorizontalStackLayout>
-            </VerticalStackLayout>
-        </Border>
-    </Grid>
+                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="12">
+                        <Label
+                            Text="{x:Static text:AppText.LoginForgotPassword}"
+                            FontSize="12"
+                            TextColor="{StaticResource PrimaryDark}" />
+                    </HorizontalStackLayout>
+
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+    </ScrollView>
 </ContentPage>
