@@ -1,6 +1,7 @@
 using CommunityToolkit.Maui;
 using DrivingSchoolApp.Services.API;
 using DrivingSchoolApp.Services.API.Implementation;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 
@@ -30,7 +31,8 @@ public static class MauiProgram
             .AddScoped<IDrivingSchoolService, DrivingSchoolService>()
             .AddScoped<IInstructorService, InstructorService>()
             .AddScoped<IStudentInviteService, StudentInviteService>()
-            .AddScoped<IStudentService, StudentService>();
+            .AddScoped<IStudentService, StudentService>()
+            .AddMemoryCache();
 #if DEBUG
         builder.Logging.AddDebug();
 #endif

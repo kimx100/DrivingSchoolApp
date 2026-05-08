@@ -39,21 +39,18 @@ public static class DrivingLessonMapper
         {
             using var instructorSignature = new Image<A8>(signatureWidth, signatureHeight);
 
-            foreach (var strokeData in model.InstructorSignature?.Strokes ?? [])
-            {
-                var points = strokeData.Points.Select(p => new PointF(p.X, p.Y)).ToArray();
-                instructorSignature.Mutate(o =>
-                    o.DrawLine(Color.Black, strokeData.LineWidth, points)
-                );
-            }
-
+            var instructorPoints = model.InstructorSignature?.Strokes.SelectMany(x => x.Points)
+                .Select(p => new PointF(p.X, p.Y)).ToArray() ?? [];
+            instructorSignature.Mutate(o =>
+                o.DrawLine(Color.Black, model.InstructorSignature!.Strokes[0].LineWidth, instructorPoints)
+            );
+            
             using var studentSignature = new Image<A8>(signatureWidth, signatureHeight);
-            foreach (var strokeData in model.StudentSignature?.Strokes ?? [])
-            {
-                var points = strokeData.Points.Select(p => new PointF(p.X, p.Y)).ToArray();
-                studentSignature.Mutate(o =>
-                    o.DrawLine(Color.Black, strokeData.LineWidth, points));
-            }
+            var studentPoints = model.StudentSignature?.Strokes.SelectMany(x => x.Points)
+                .Select(p => new PointF(p.X, p.Y)).ToArray() ?? [];
+            studentSignature.Mutate(o =>
+                o.DrawLine(Color.Black, model.StudentSignature!.Strokes[0].LineWidth, studentPoints)
+            );
 
             using var instructorSignatureMs = new MemoryStream();
             using var studentSignatureMs = new MemoryStream();
