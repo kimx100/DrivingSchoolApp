@@ -279,11 +279,17 @@ private void ZoomToRadius(double latitude, double longitude, double radiusMeters
         ClearRouteVisuals();
         RefreshFromCoordinator();
 
-        if (savedSession is not null)
+        if (savedSession is null)
         {
-            await Shell.Current.GoToAsync(
-                $"{nameof(RouteConfirmationPage)}?sessionId={Uri.EscapeDataString(savedSession.Id)}");
+            await DisplayAlertAsync(
+                "Rute ikke gemt",
+                "Ruten havde ikke nok GPS-punkter til at blive gemt. Prøv igen, når GPS'en har registreret flere punkter.",
+                AppText.CommonOk);
+            return;
         }
+
+        await Shell.Current.GoToAsync(
+            $"{nameof(RouteConfirmationPage)}?sessionId={Uri.EscapeDataString(savedSession.Id)}");
     }
 
     private async void ResetButton_Clicked(object? sender, EventArgs e)
