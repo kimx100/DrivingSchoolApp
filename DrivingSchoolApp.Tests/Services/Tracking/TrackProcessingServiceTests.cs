@@ -45,6 +45,35 @@ public class TrackProcessingServiceTests
     }
 
     [Fact]
+    public void TryProcess_FirstPointWithoutAccuracy_ReturnsFalse()
+    {
+        var service = new TrackProcessingService();
+        var raw = new TrackPoint(
+            Timestamp: BaseTime,
+            Latitude: 55.6761,
+            Longitude: 12.5683,
+            AccuracyMeters: null);
+
+        var accepted = service.TryProcess(raw, out _);
+
+        Assert.False(accepted);
+    }
+
+    [Fact]
+    public void TryProcess_SecondPointTooSoon_ReturnsFalse()
+    {
+        var service = new TrackProcessingService();
+        var first = CreatePoint(BaseTime, 55.6761, 12.5683, accuracyMeters: 5);
+        var tooSoon = CreatePoint(BaseTime.AddMilliseconds(500), 55.6761, 12.5684, accuracyMeters: 5);
+
+        Assert.True(service.TryProcess(first, out _));
+
+        var accepted = service.TryProcess(tooSoon, out _);
+
+        Assert.False(accepted);
+    }
+
+    [Fact]
     public void TryProcess_TinyMovementAfterAcceptedPoint_ReturnsFalse()
     {
         var service = new TrackProcessingService();
@@ -54,6 +83,34 @@ public class TrackProcessingServiceTests
         Assert.True(service.TryProcess(first, out _));
 
         var accepted = service.TryProcess(tinyMove, out _);
+
+        Assert.False(accepted);
+    }
+
+    [Fact]
+    public void TryProcess_ImpossibleJumpWithinShortTime_ReturnsFalse()
+    {
+        var service = new TrackProcessingService();
+        var first = CreatePoint(BaseTime, 55.6761, 12.5683, accuracyMeters: 5);
+        var jump = CreatePoint(BaseTime.AddSeconds(2), 55.6861, 12.5683, accuracyMeters: 5);
+
+        Assert.True(service.TryProcess(first, out _));
+
+        var accepted = service.TryProcess(jump, out _);
+
+        Assert.False(accepted);
+    }
+
+    [Fact]
+    public void TryProcess_ImpliedSpeedOverLimit_ReturnsFalse()
+    {
+        var service = new TrackProcessingService();
+        var first = CreatePoint(BaseTime, 55.6761, 12.5683, accuracyMeters: 5);
+        var tooFast = CreatePoint(BaseTime.AddSeconds(3), 55.6781, 12.5683, accuracyMeters: 5);
+
+        Assert.True(service.TryProcess(first, out _));
+
+        var accepted = service.TryProcess(tooFast, out _);
 
         Assert.False(accepted);
     }
