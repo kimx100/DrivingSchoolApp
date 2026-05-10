@@ -1,16 +1,20 @@
 using DrivingSchoolApp.DTOs.Instructor;
 using DrivingSchoolApp.Services;
 using DrivingSchoolApp.Services.API;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace DrivingSchoolApp.Pages;
 
 public partial class MyPage : ContentPage
 {
     private bool _loaded;
+    private readonly IAuthService _authService;
+    private readonly IDrivingSchoolService _drivingSchoolService;
 
-    public MyPage()
+    public MyPage(IAuthService authService, IDrivingSchoolService drivingSchoolService)
     {
+        _authService = authService;
+        _drivingSchoolService = drivingSchoolService;
+        
         InitializeComponent();
         LoadPriceFields();
     }
@@ -31,13 +35,7 @@ public partial class MyPage : ContentPage
 
         try
         {
-            var services = Handler?.MauiContext?.Services
-                           ?? throw new InvalidOperationException("Application services are not available.");
-
-            var authService = services.GetRequiredService<IAuthService>();
-            var drivingSchoolService = services.GetRequiredService<IDrivingSchoolService>();
-
-            var instructorResult = await authService.GetSelfAsync<InstructorDto>();
+            var instructorResult = await _authService.GetSelfAsync<InstructorDto>(false);
             if (!instructorResult.IsSuccessful || instructorResult.Data is null)
                 throw new InvalidOperationException("Kunne ikke hente underviserprofil.");
 
@@ -47,7 +45,7 @@ public partial class MyPage : ContentPage
             InstructorPhoneLabel.Text = instructor.PhoneNumber;
             DrivingSchoolLabel.Text = instructor.SchoolId.ToString();
 
-            var schoolResult = await drivingSchoolService.GetDrivingSchoolByIdAsync(instructor.SchoolId);
+            var schoolResult = await _drivingSchoolService.GetDrivingSchoolByIdAsync(instructor.SchoolId);
             if (schoolResult.IsSuccessful && schoolResult.Data is not null)
                 DrivingSchoolLabel.Text = schoolResult.Data.Name;
 
@@ -107,12 +105,8 @@ public partial class MyPage : ContentPage
 
         try
         {
-            var services = Handler?.MauiContext?.Services
-                           ?? throw new InvalidOperationException("Application services are not available.");
-
-            var authService = services.GetRequiredService<IAuthService>();
-            await authService.LogoutAsync();
-            await AppNavigation.OpenLogInPageAsync(authService);
+            await _authService.LogoutAsync();
+            await AppNavigation.OpenLogInPageAsync(_authService);
         }
         catch
         {

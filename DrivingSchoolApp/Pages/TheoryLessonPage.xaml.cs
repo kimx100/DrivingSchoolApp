@@ -13,6 +13,9 @@ namespace DrivingSchoolApp.Pages;
 
 public partial class TheoryLessonPage : ContentPage
 {
+    private readonly IAuthService _authService;
+    private readonly IDrivingSchoolService _drivingSchoolService;
+    
     private readonly ObservableCollection<StudentDto> _students = new();
     private readonly List<TheoryStudentAttendanceItem> _attendanceItems = new();
     private bool _isLoading;
@@ -31,8 +34,11 @@ public partial class TheoryLessonPage : ContentPage
     private DrawingView StudentSignaturePad
         => _studentSignaturePad ??= CreateSignaturePad(StudentSignatureHost, "student");
 
-    public TheoryLessonPage()
+    public TheoryLessonPage(IAuthService authService, IDrivingSchoolService drivingSchoolService)
     {
+        _authService = authService;
+        _drivingSchoolService = drivingSchoolService;
+        
         InitializeComponent();
         _theoryLessonPrice = LessonPriceSettingsService.GetDefaultTheoryLessonPrice();
         TheoryLessonPriceEntry.Text = LessonPriceSettingsService.FormatPrice(_theoryLessonPrice);
@@ -57,7 +63,7 @@ public partial class TheoryLessonPage : ContentPage
 
     private async void RefreshButton_Clicked(object? sender, EventArgs e)
     {
-        await LoadStudentsAsync();
+        await LoadStudentsAsync(false);
     }
 
     private void StartLessonButton_Clicked(object? sender, EventArgs e)
@@ -251,7 +257,7 @@ public partial class TheoryLessonPage : ContentPage
         CurrentStudentPriceEntry.Unfocus();
     }
 
-    private async Task LoadStudentsAsync()
+    private async Task LoadStudentsAsync(bool checkCache = true)
     {
         if (_isLoading)
             return;
@@ -262,17 +268,11 @@ public partial class TheoryLessonPage : ContentPage
         {
             _students.Clear();
             
-            var services = Handler?.MauiContext?.Services
-                           ?? throw new InvalidOperationException("Application services are not available.");
-
-            var authService = services.GetRequiredService<IAuthService>();
-            var drivingSchoolService = services.GetRequiredService<IDrivingSchoolService>();
-
-            var instructorResult = await authService.GetSelfAsync<InstructorDto>();
+            var instructorResult = await _authService.GetSelfAsync<InstructorDto>();
             if (!instructorResult.IsSuccessful || instructorResult.Data is null)
                 throw new InvalidOperationException("Could not load the current instructor.");
 
-            var studentsResult = await drivingSchoolService.GetAllStudentsFromSchoolAsync(instructorResult.Data.SchoolId);
+            var studentsResult = await _drivingSchoolService.GetAllStudentsFromSchoolAsync(instructorResult.Data.SchoolId, checkCache);
             if (!studentsResult.IsSuccessful)
                 throw new InvalidOperationException("Could not load students from the driving school.");
 

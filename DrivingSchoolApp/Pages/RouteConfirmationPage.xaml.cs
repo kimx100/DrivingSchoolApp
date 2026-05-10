@@ -362,13 +362,13 @@ public partial class RouteConfirmationPage : ContentPage
 
         await StudentProgressStorage.SaveLessonCompletionAsync(
             studentName,
-            selectedStudent.Student.Id.ToString(),
+            selectedStudent?.Student.Id.ToString(),
             _session.Id,
             selectedItems,
             finalizedAt);
 
         // TODO: Use instructor/student API ids when uploading finalized routes to the API.
-        _session.StudentId = selectedStudent.Student.Id.ToString();
+        _session.StudentId = selectedStudent?.Student.Id.ToString();
         _session.StudentName = studentName;
         _session.InstructorName = instructorName;
         _session.TotalDistanceMeters ??= RouteSessionMetrics.CalculateDistanceMeters(_session.Points);

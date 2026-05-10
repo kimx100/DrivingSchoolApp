@@ -14,5 +14,5 @@ public interface IAuthService
     Task<bool> HasSavedAccessTokenAsync();
     Task LogoutAsync();
 
-    Task<RestResponse<T>> GetSelfAsync<T>() where T : IUserDto;
+    Task<RestResponse<T>> GetSelfAsync<T>(bool checkCache = true) where T : IUserDto;
 }

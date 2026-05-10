@@ -3,13 +3,21 @@ using DrivingSchoolApp.DTOs.DrivingLesson;
 using DrivingSchoolApp.DTOs.Instructor;
 using DrivingSchoolApp.DTOs.TheoryLesson;
 using DrivingSchoolApp.DTOs.ValueObject;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using RestSharp;
 
 namespace DrivingSchoolApp.Services.API.Implementation;
 
-public class InstructorService(IConfiguration config) : ApiService(config["api_base_url"]!), IInstructorService
+public class InstructorService : ApiService, IInstructorService
 {
+    private readonly IMemoryCache _cache;
+    
+    public InstructorService(IConfiguration config, IMemoryCache cache) : base(config["api_base_url"]!)
+    {
+        _cache = cache;
+    }
+    
     public async Task<RestResponse<InstructorDto>> RegisterInstructorAsync(InstructorRegistryDto registryDto)
     {
         var request = new RestRequest("/instructor/register", Method.Post);
@@ -17,18 +25,36 @@ public class InstructorService(IConfiguration config) : ApiService(config["api_b
         return await ExecuteRequestAsync<InstructorDto>(request);
     }
 
-    public async Task<RestResponse<List<InstructorDto>>> GetAllInstructorsAsync()
+    public async Task<RestResponse<List<InstructorDto>>> GetAllInstructorsAsync(bool checkCache = true)
     {
-        var request = new RestRequest("/instructor");
+        if (checkCache 
+            && _cache.TryGetValue("/instructor", out RestResponse<List<InstructorDto>>? instructors)
+            && instructors is not null) return instructors;
 
-        return await ExecuteRequestAsync<List<InstructorDto>>(request);
+        var request = new RestRequest("/instructor");
+        var response = await ExecuteRequestAsync<List<InstructorDto>>(request);
+
+        var cacheEntryOptions = new MemoryCacheEntryOptions()
+            .SetAbsoluteExpiration(DateTime.Now.AddMinutes(30));
+        _cache.Set("/instructor", response, cacheEntryOptions);
+        
+        return response;
     }
 
-    public async Task<RestResponse<InstructorDto>> GetInstructorByIdAsync(Guid instructorId)
+    public async Task<RestResponse<InstructorDto>> GetInstructorByIdAsync(Guid instructorId, bool checkCache = true)
     {
+        if (checkCache 
+            && _cache.TryGetValue($"/instructor/{instructorId}", out RestResponse<InstructorDto>? instructor)
+            && instructor is not null) return instructor;
+        
         var request = new RestRequest($"/instructor/{instructorId}");
+        var response = await ExecuteRequestAsync<InstructorDto>(request);
 
-        return await ExecuteRequestAsync<InstructorDto>(request);
+        var cacheEntryOptions = new MemoryCacheEntryOptions()
+            .SetAbsoluteExpiration(DateTime.Now.AddMinutes(30));
+        _cache.Set($"/instructor/{instructorId}", response, cacheEntryOptions);
+
+        return response;
     }
 
     public async Task<RestResponse<InstructorDto>> UpdateInstructorAsync(Guid instructorId, InstructorUpdateDto updateDto)
@@ -76,11 +102,20 @@ public class InstructorService(IConfiguration config) : ApiService(config["api_b
         return await ExecuteRequestAsync<TheoryLessonDto>(request);
     }
 
-    public async Task<RestResponse<List<TheoryLessonDto>>> GetTheoryLessonsAsync(Guid instructorId)
+    public async Task<RestResponse<List<TheoryLessonDto>>> GetTheoryLessonsAsync(Guid instructorId, bool checkCache = true)
     {
-        var request = new RestRequest($"/instructor/{instructorId}/theoryLesson");
+        if (checkCache 
+            && _cache.TryGetValue($"/instructor/{instructorId}/theoryLesson", out RestResponse<List<TheoryLessonDto>>? theoryLessons)
+            && theoryLessons is not null) return theoryLessons;
 
-        return await ExecuteRequestAsync<List<TheoryLessonDto>>(request);
+        var request = new RestRequest($"/instructor/{instructorId}/theoryLesson");
+        var response = await ExecuteRequestAsync<List<TheoryLessonDto>>(request);
+        
+        var cacheEntryOptions = new MemoryCacheEntryOptions()
+            .SetAbsoluteExpiration(DateTime.Now.AddMinutes(30));
+        _cache.Set($"/instructor/{instructorId}/theoryLesson", response, cacheEntryOptions);
+
+        return response;
     }
 
     public async Task<RestResponse<DrivingLessonDto>> CreateDrivingLessonAsync(Guid instructorId, DrivingLessonRegistryDto registryDto)
@@ -121,10 +156,19 @@ public class InstructorService(IConfiguration config) : ApiService(config["api_b
         return await ExecuteRequestAsync<DrivingLessonDto>(request);
     }
 
-    public async Task<RestResponse<List<DrivingLessonDto>>> GetDrivingLessonsAsync(Guid instructorId)
+    public async Task<RestResponse<List<DrivingLessonDto>>> GetDrivingLessonsAsync(Guid instructorId, bool checkCache = true)
     {
-        var request = new RestRequest($"/instructor/{instructorId}/drivingLesson");
+        if (checkCache 
+            && _cache.TryGetValue($"/instructor/{instructorId}/drivingLesson", out RestResponse<List<DrivingLessonDto>>? drivingLessons)
+            && drivingLessons is not null) return drivingLessons;
 
-        return await ExecuteRequestAsync<List<DrivingLessonDto>>(request);
+        var request = new RestRequest($"/instructor/{instructorId}/drivingLesson");
+        var response = await ExecuteRequestAsync<List<DrivingLessonDto>>(request);
+        
+        var cacheEntryOptions = new MemoryCacheEntryOptions()
+            .SetAbsoluteExpiration(DateTime.Now.AddMinutes(30));
+        _cache.Set($"/instructor/{instructorId}/drivingLesson", response, cacheEntryOptions);
+        
+        return response;
     }
 }

@@ -67,6 +67,7 @@
     <ItemGroup>
         <PackageReference Include="CommunityToolkit.Maui" Version="13.0.0" />
         <PackageReference Include="Mapsui.Maui" Version="5.0.2" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.7" />
         <PackageReference Include="RestSharp" Version="114.0.0" />
         <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
         <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
