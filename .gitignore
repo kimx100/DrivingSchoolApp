@@ -7,3 +7,5 @@
 *.iml
 .DS_Store
 Thumbs.db
+**/TestResults/
+**/coverage.cobertura.xml

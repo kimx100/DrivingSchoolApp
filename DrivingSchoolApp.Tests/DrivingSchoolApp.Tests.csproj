@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <Compile Include="..\DrivingSchoolApp\Services\RouteSessionMetrics.cs" Link="Source\Services\RouteSessionMetrics.cs" />
+    <Compile Include="..\DrivingSchoolApp\Services\Tracking\TrackProcessingService.cs" Link="Source\Services\Tracking\TrackProcessingService.cs" />
     <Compile Include="..\DrivingSchoolApp\Models\ValueObejct\TrackPoints.cs" Link="Source\Models\ValueObejct\TrackPoints.cs" />
   </ItemGroup>
 
