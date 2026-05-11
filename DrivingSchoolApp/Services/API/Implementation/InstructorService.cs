@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using DrivingSchoolApp.DTOs.Common;
 using DrivingSchoolApp.DTOs.DrivingLesson;
 using DrivingSchoolApp.DTOs.Instructor;
@@ -133,7 +134,9 @@ public class InstructorService : ApiService, IInstructorService
         request.AddParameter("Route.DateTimeRange.StartDateTime", registryDto.Route.DateTimeRange.StartDateTime);
         request.AddParameter("Route.DateTimeRange.EndDateTime", registryDto.Route.DateTimeRange.EndDateTime);
         var coordinates = registryDto.Route.RouteCoordinates;
-        for(int i = 0; i < registryDto.Route.RouteCoordinates.Length; i++)
+        LogDrivingLessonUploadShape(instructorId, coordinates.Length);
+
+        for(int i = 0; i < coordinates.Length; i++)
         {
             request.AddParameter($"Route.RouteCoordinates[{i}].Order", coordinates[i].Order);
             request.AddParameter($"Route.RouteCoordinates[{i}].Latitude", coordinates[i].Latitude);
@@ -154,6 +157,26 @@ public class InstructorService : ApiService, IInstructorService
         request.AddHeader("Content-Type", "multipart/form-data");
 
         return await ExecuteRequestAsync<DrivingLessonDto>(request);
+    }
+
+    private static void LogDrivingLessonUploadShape(
+        Guid instructorId,
+        int routePointCount)
+    {
+#if DEBUG
+        var estimatedFormValueCount =
+            2 + // SchoolId, StudentId
+            2 + // Route date range
+            routePointCount * 3 + // Order, Latitude, Longitude per coordinate
+            2 + // Price
+            6; // Completed objectives
+
+        Debug.WriteLine(
+            "InstructorService: Uploading driving lesson. " +
+            $"Endpoint=/instructor/{instructorId}/drivingLesson; " +
+            $"RoutePoints={routePointCount}; " +
+            $"EstimatedFormValues={estimatedFormValueCount}");
+#endif
     }
 
     public async Task<RestResponse<List<DrivingLessonDto>>> GetDrivingLessonsAsync(Guid instructorId, bool checkCache = true)

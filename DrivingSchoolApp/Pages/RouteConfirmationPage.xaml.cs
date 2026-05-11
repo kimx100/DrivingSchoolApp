@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using CommunityToolkit.Maui.Core;
 using CommunityToolkit.Maui.Core.Views;
@@ -18,6 +19,7 @@ using Mapsui.Tiling;
 using Mapsui.UI.Maui;
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Storage;
+using RestSharp;
 
 namespace DrivingSchoolApp.Pages;
 
@@ -395,7 +397,8 @@ public partial class RouteConfirmationPage : ContentPage
         var created = await _instructorService.CreateDrivingLessonAsync(self.Data!.Id, drivingLessonRegistry);
         if (!created.IsSuccessful)
         {
-            await DisplayAlertAsync("Error", created.ErrorMessage, AppText.CommonOk);
+            LogDrivingLessonUploadFailure(self.Data!.Id, created);
+            await DisplayAlertAsync("Lesson could not be uploaded", BuildDrivingLessonUploadError(created), AppText.CommonOk);
             return;
         }
         
@@ -480,6 +483,42 @@ public partial class RouteConfirmationPage : ContentPage
 
     private static string FormatInstructorName(InstructorDto instructor)
         => $"{instructor.Name.FirstName} {instructor.Name.LastName}".Trim();
+
+    private static string BuildDrivingLessonUploadError(RestResponse<DrivingLessonDto> response)
+    {
+        const string friendlyMessage = "Lesson could not be uploaded. Please check connection and try again.";
+
+#if DEBUG
+        var details = new List<string>
+        {
+            $"Status: {(int)response.StatusCode} {response.StatusCode}",
+            $"Response status: {response.ResponseStatus}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(response.ErrorMessage))
+            details.Add($"Error: {response.ErrorMessage}");
+
+        if (!string.IsNullOrWhiteSpace(response.Content))
+            details.Add($"Response: {response.Content}");
+
+        return $"{friendlyMessage}\n\n{string.Join("\n", details)}";
+#else
+        return friendlyMessage;
+#endif
+    }
+
+    private static void LogDrivingLessonUploadFailure(Guid instructorId, RestResponse<DrivingLessonDto> response)
+    {
+#if DEBUG
+        Debug.WriteLine(
+            "RouteConfirmationPage: Driving lesson upload failed. " +
+            $"Endpoint=/instructor/{instructorId}/drivingLesson; " +
+            $"StatusCode={(int)response.StatusCode} {response.StatusCode}; " +
+            $"ResponseStatus={response.ResponseStatus}; " +
+            $"ErrorMessage={response.ErrorMessage}; " +
+            $"Content={response.Content}");
+#endif
+    }
 }
 
 internal sealed class RouteStudentPickerItem(StudentDto student)

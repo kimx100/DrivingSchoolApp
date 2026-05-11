@@ -2,6 +2,7 @@ using DrivingSchoolApp.DTOs.DrivingLesson;
 using DrivingSchoolApp.Mapper.ValueObject;
 using DrivingSchoolApp.Models;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -12,6 +13,7 @@ namespace DrivingSchoolApp.Mapper;
 
 public static class DrivingLessonMapper
 {
+    private const float DefaultSignatureLineWidth = 4f;
 
     extension(IEnumerable<CompletedLessonItem> model)
     {
@@ -37,20 +39,17 @@ public static class DrivingLessonMapper
             int signatureWidth, 
             int signatureHeight)
         {
-            using var instructorSignature = new Image<A8>(signatureWidth, signatureHeight);
+            using var instructorSignature = new Image<A8>(
+                Math.Max(signatureWidth, 1),
+                Math.Max(signatureHeight, 1));
 
-            var instructorPoints = model.InstructorSignature?.Strokes.SelectMany(x => x.Points)
-                .Select(p => new PointF(p.X, p.Y)).ToArray() ?? [];
-            instructorSignature.Mutate(o =>
-                o.DrawLine(Color.Black, model.InstructorSignature!.Strokes[0].LineWidth, instructorPoints)
-            );
+            DrawSignature(instructorSignature, model.InstructorSignature);
             
-            using var studentSignature = new Image<A8>(signatureWidth, signatureHeight);
-            var studentPoints = model.StudentSignature?.Strokes.SelectMany(x => x.Points)
-                .Select(p => new PointF(p.X, p.Y)).ToArray() ?? [];
-            studentSignature.Mutate(o =>
-                o.DrawLine(Color.Black, model.StudentSignature!.Strokes[0].LineWidth, studentPoints)
-            );
+            using var studentSignature = new Image<A8>(
+                Math.Max(signatureWidth, 1),
+                Math.Max(signatureHeight, 1));
+
+            DrawSignature(studentSignature, model.StudentSignature);
 
             using var instructorSignatureMs = new MemoryStream();
             using var studentSignatureMs = new MemoryStream();
@@ -70,6 +69,32 @@ public static class DrivingLessonMapper
                 price.ToDto(),
                 model.CompletedItems.ToDto()
             );
+        }
+    }
+
+    private static void DrawSignature(Image<A8> image, LessonSignature? signature)
+    {
+        foreach (var stroke in signature?.Strokes ?? [])
+        {
+            var points = stroke.Points
+                .Select(p => new PointF(p.X, p.Y))
+                .ToArray();
+
+            if (points.Length == 0)
+                continue;
+
+            var lineWidth = stroke.LineWidth > 0 ? stroke.LineWidth : DefaultSignatureLineWidth;
+
+            if (points.Length == 1)
+            {
+                var point = points[0];
+                var radius = Math.Max(lineWidth / 2f, 1f);
+
+                image.Mutate(o => o.Fill(Color.Black, new EllipsePolygon(point.X, point.Y, radius)));
+                continue;
+            }
+
+            image.Mutate(o => o.DrawLine(Color.Black, lineWidth, points));
         }
     }
 }
