@@ -7,6 +7,7 @@ using CommunityToolkit.Maui.Views;
 using DrivingSchoolApp.DTOs.DrivingLesson;
 using DrivingSchoolApp.DTOs.Instructor;
 using DrivingSchoolApp.DTOs.Student;
+using DrivingSchoolApp.DTOs.ValueObject;
 using DrivingSchoolApp.Localization;
 using DrivingSchoolApp.Mapper;
 using DrivingSchoolApp.Models;
@@ -386,12 +387,14 @@ public partial class RouteConfirmationPage : ContentPage
         _session.StudentSignature = BuildSignature(StudentSignaturePad, studentName, finalizedAt);
         _session.IsFinalized = true;
         _session.FinalizedAt = finalizedAt;
-        
+
+        var uploadRoute = await BuildUploadRouteDtoAsync(_session);
         var drivingLessonRegistry = await _session.ToRegistryDto(
             self.Data!.SchoolId,
             LessonPriceSettingsService.CreateMoney(lessonPrice),
             (int)InstructorSignaturePad.Width,
-            (int)InstructorSignaturePad.Height
+            (int)InstructorSignaturePad.Height,
+            uploadRoute
         );
 
         var created = await _instructorService.CreateDrivingLessonAsync(self.Data!.Id, drivingLessonRegistry);
@@ -415,6 +418,53 @@ public partial class RouteConfirmationPage : ContentPage
 
     private static bool HasSignature(DrawingView signaturePad)
         => signaturePad.Lines?.Any(x => x.Points?.Count > 1) == true;
+
+    private static async Task<DrivingRouteDto> BuildUploadRouteDtoAsync(RouteSession session)
+    {
+        var snap = await RouteSnapStorage.LoadAsync(session.Id);
+        if (snap is not null && HasUsableSnap(session, snap))
+        {
+            var snappedGeometry = snap.Geometry;
+            LogRouteUploadCoordinateSource(
+                session.Id,
+                "snapped route coordinates",
+                snappedGeometry.Count,
+                session.Points.Count);
+
+            return session.ToDto(snappedGeometry);
+        }
+
+        LogRouteUploadCoordinateSource(
+            session.Id,
+            "raw GPS route coordinates",
+            session.Points.Count,
+            session.Points.Count);
+
+        return session.ToDto();
+    }
+
+    private static bool HasUsableSnap(RouteSession route, SnappedRouteCache? snap)
+    {
+        return snap is not null &&
+               snap.SessionId == route.Id &&
+               snap.SourcePointCount == route.Points.Count &&
+               snap.Geometry is { Count: > 1 };
+    }
+
+    private static void LogRouteUploadCoordinateSource(
+        string sessionId,
+        string source,
+        int uploadPointCount,
+        int rawPointCount)
+    {
+#if DEBUG
+        Debug.WriteLine(
+            "RouteConfirmationPage: Driving lesson upload using " +
+            $"{source}. SessionId={sessionId}; " +
+            $"UploadRoutePoints={uploadPointCount}; " +
+            $"RawRoutePoints={rawPointCount}");
+#endif
+    }
 
     private static LessonSignature BuildSignature(
         DrawingView signaturePad,

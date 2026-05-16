@@ -1,4 +1,5 @@
 using DrivingSchoolApp.DTOs.DrivingLesson;
+using DrivingSchoolApp.DTOs.ValueObject;
 using DrivingSchoolApp.Mapper.ValueObject;
 using DrivingSchoolApp.Models;
 using SixLabors.ImageSharp;
@@ -37,7 +38,8 @@ public static class DrivingLessonMapper
             Guid schoolId,
             Money price,
             int signatureWidth, 
-            int signatureHeight)
+            int signatureHeight,
+            DrivingRouteDto? route = null)
         {
             using var instructorSignature = new Image<A8>(
                 Math.Max(signatureWidth, 1),
@@ -65,7 +67,7 @@ public static class DrivingLessonMapper
                 studentSignatureMs.ToArray(),
                 schoolId,
                 Guid.Parse(model.StudentId!),
-                model.ToDto(),
+                route ?? model.ToDto(),
                 price.ToDto(),
                 model.CompletedItems.ToDto()
             );

@@ -37,5 +37,18 @@ public static class DrivingRouteMapper
                     .Select((point, index) => point.ToDto(index+1)).ToArray()
             );
         }
+
+        public DrivingRouteDto ToDto(IReadOnlyList<RouteCoordinate> routeGeometry)
+        {
+            return new DrivingRouteDto(
+                new DateTimeRangeDto(model.StartedAt.UtcDateTime, model.EndedAt.UtcDateTime),
+                routeGeometry
+                    .Select((coordinate, index) => new CoordinatePointDto(
+                        index + 1,
+                        (float)coordinate.Latitude,
+                        (float)coordinate.Longitude))
+                    .ToArray()
+            );
+        }
     }
 }
