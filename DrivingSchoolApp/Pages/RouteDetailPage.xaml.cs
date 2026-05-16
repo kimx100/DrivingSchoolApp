@@ -334,10 +334,13 @@ public partial class RouteDetailPage : ContentPage
         if (_session is null || _isSnapping)
             return;
 
+        var hadUsableSnappedGeometry = HasUsableSnappedGeometry();
+        var existingSnapCache = _snapCache;
+
         _isSnapping = true;
         UpdateSnapToolbarText();
 
-        LoadingMessageLabel.Text = HasUsableSnappedGeometry()
+        LoadingMessageLabel.Text = hadUsableSnappedGeometry
             ? AppText.RouteDetailResnappingMessage
             : AppText.RouteDetailSnappingMessage;
         LoadingOverlay.IsVisible = true;
@@ -348,7 +351,17 @@ public partial class RouteDetailPage : ContentPage
 
             if (!result.Success || result.Cache is null)
             {
-                await DisplayAlertAsync(AppText.RouteDetailSnapUnavailableTitle, result.Message, AppText.CommonOk);
+                if (hadUsableSnappedGeometry)
+                {
+                    _snapCache = existingSnapCache;
+                    DrawBestAvailableRoute();
+                    UpdateRouteInfoOverlay();
+                }
+
+                await DisplayAlertAsync(
+                    AppText.RouteDetailSnapUnavailableTitle,
+                    BuildManualSnapFailureMessage(result.Message, hadUsableSnappedGeometry),
+                    AppText.CommonOk);
                 return;
             }
 
@@ -373,6 +386,18 @@ public partial class RouteDetailPage : ContentPage
             LoadingOverlay.IsVisible = false;
             UpdateSnapToolbarText();
         }
+    }
+
+    private static string BuildManualSnapFailureMessage(string detail, bool hasCachedSnap)
+    {
+        var routeMessage = hasCachedSnap
+            ? "Road snapping is currently unavailable. The previously snapped route is still shown."
+            : "Road snapping is currently unavailable. The raw GPS route is still shown.";
+
+        if (string.IsNullOrWhiteSpace(detail))
+            return routeMessage;
+
+        return $"{routeMessage}\n\n{detail}";
     }
 
     private async void DeleteToolbarItem_Clicked(object? sender, EventArgs e)

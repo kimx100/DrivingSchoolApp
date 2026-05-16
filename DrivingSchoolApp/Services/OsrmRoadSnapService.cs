@@ -1,5 +1,7 @@
 using System.Globalization;
+using System.Diagnostics;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using DrivingSchoolApp.Models;
 using Microsoft.Maui.Networking;
@@ -8,10 +10,9 @@ namespace DrivingSchoolApp.Services;
 
 public sealed class OsrmRoadSnapService
 {
-    private static readonly HttpClient Http = new()
-    {
-        Timeout = TimeSpan.FromSeconds(25)
-    };
+    private const int ResponseLogPrefixLength = 500;
+
+    private static readonly HttpClient Http = CreateHttpClient();
 
     public async Task<RouteSnapAttemptResult> TrySnapAsync(RouteSession session, CancellationToken ct = default)
     {
@@ -30,8 +31,8 @@ public sealed class OsrmRoadSnapService
                 message: "No internet connection is available right now.");
         }
 
-        // Try higher detail first, then reduce if OSRM says the request is too big
-        var sampleSizes = new[] { 40, 25, 15, 10 };
+        // The public OSRM demo match endpoint rejects larger traces for some routes.
+        var sampleSizes = new[] { 10, 8, 6 };
 
         RouteSnapAttemptResult? lastFailure = null;
 
@@ -57,6 +58,20 @@ public sealed class OsrmRoadSnapService
         return lastFailure ?? RouteSnapAttemptResult.Fail(
             hadInternet: true,
             message: "Snapping failed after trying smaller route samples.");
+    }
+
+    private static HttpClient CreateHttpClient()
+    {
+        var client = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(25)
+        };
+
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "DrivingSchoolApp/1.0 (+student project; contact not available)");
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        return client;
     }
 
     private async Task<RouteSnapAttemptResult> TrySnapWithSampleSizeAsync(
@@ -92,6 +107,8 @@ public sealed class OsrmRoadSnapService
             $"https://router.project-osrm.org/match/v1/driving/{coordinates}" +
             $"?overview=full&geometries=geojson&timestamps={timestamps}&radiuses={radiuses}&steps=false&annotations=false&gaps=ignore&tidy=true";
 
+        LogRequest(sampled.Count, url);
+
         Exception? lastException = null;
         System.Net.HttpStatusCode? lastStatusCode = null;
 
@@ -103,6 +120,7 @@ public sealed class OsrmRoadSnapService
             {
                 using var response = await Http.GetAsync(url, ct);
                 var responseText = await response.Content.ReadAsStringAsync(ct);
+                LogResponse(sampled.Count, response.StatusCode, responseText);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -197,6 +215,7 @@ public sealed class OsrmRoadSnapService
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or IOException)
             {
                 lastException = ex;
+                LogException(sampled.Count, ex);
             }
 
             if (attempt < 3)
@@ -252,5 +271,32 @@ public sealed class OsrmRoadSnapService
         }
 
         return result;
+    }
+
+    [Conditional("DEBUG")]
+    private static void LogRequest(int sampleCount, string url)
+    {
+        Debug.WriteLine(
+            $"OsrmRoadSnapService: request sampleCount={sampleCount}; urlLength={url.Length}; url={url}");
+    }
+
+    [Conditional("DEBUG")]
+    private static void LogResponse(int sampleCount, System.Net.HttpStatusCode statusCode, string responseText)
+    {
+        var bodyPrefix = responseText.Length <= ResponseLogPrefixLength
+            ? responseText
+            : responseText[..ResponseLogPrefixLength];
+
+        Debug.WriteLine(
+            $"OsrmRoadSnapService: response sampleCount={sampleCount}; " +
+            $"status={(int)statusCode} {statusCode}; bodyPrefix={bodyPrefix}");
+    }
+
+    [Conditional("DEBUG")]
+    private static void LogException(int sampleCount, Exception exception)
+    {
+        Debug.WriteLine(
+            $"OsrmRoadSnapService: request failed sampleCount={sampleCount}; " +
+            $"{exception.GetType().Name}: {exception.Message}");
     }
 }

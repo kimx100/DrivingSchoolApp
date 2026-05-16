@@ -20,8 +20,6 @@ public static class RouteSnapBackgroundProcessor
         {
             if (!route.IsFinalized)
             {
-                await RouteSnapStorage.DeleteAsync(route.Id);
-                await RouteSnapStateStorage.DeleteAsync(route.Id);
                 continue;
             }
 
@@ -41,6 +39,21 @@ public static class RouteSnapBackgroundProcessor
                     };
 
                     await RouteSnapStateStorage.SaveAsync(state);
+                }
+                else
+                {
+                    var status = state.HasBeenViewed
+                        ? RouteSnapWorkStatus.Viewed
+                        : RouteSnapWorkStatus.ReadyToView;
+
+                    if (state.Status != status || state.LastError is not null)
+                    {
+                        state.Status = status;
+                        state.LastError = null;
+                        state.UpdatedAtUtc = DateTimeOffset.UtcNow;
+
+                        await RouteSnapStateStorage.SaveAsync(state);
+                    }
                 }
 
                 continue;
@@ -81,10 +94,24 @@ public static class RouteSnapBackgroundProcessor
         if (route is null || !route.IsFinalized)
             return;
 
+        var existingSnap = await RouteSnapStorage.LoadAsync(sessionId);
         var state = await RouteSnapStateStorage.LoadAsync(sessionId) ?? new RouteSnapState
         {
             SessionId = sessionId
         };
+
+        if (HasUsableSnap(route, existingSnap))
+        {
+            state.Status = state.HasBeenViewed
+                ? RouteSnapWorkStatus.Viewed
+                : RouteSnapWorkStatus.ReadyToView;
+            state.LastError = null;
+            state.UpdatedAtUtc = DateTimeOffset.UtcNow;
+
+            await RouteSnapStateStorage.SaveAsync(state);
+            RaiseStatesChanged();
+            return;
+        }
 
         state.Status = RouteSnapWorkStatus.Pending;
         state.LastError = null;
@@ -179,9 +206,6 @@ public static class RouteSnapBackgroundProcessor
         var route = await RouteStorage.LoadAsync(sessionId);
         if (route is not null && !route.IsFinalized)
         {
-            await RouteSnapStorage.DeleteAsync(sessionId);
-            await RouteSnapStateStorage.DeleteAsync(sessionId);
-            RaiseStatesChanged();
             return;
         }
 
@@ -230,8 +254,19 @@ public static class RouteSnapBackgroundProcessor
         }
         else
         {
-            state.Status = RouteSnapWorkStatus.Failed;
-            state.LastError = result.Message;
+            existingSnap = await RouteSnapStorage.LoadAsync(sessionId);
+            if (HasUsableSnap(route, existingSnap))
+            {
+                state.Status = state.HasBeenViewed
+                    ? RouteSnapWorkStatus.Viewed
+                    : RouteSnapWorkStatus.ReadyToView;
+                state.LastError = null;
+            }
+            else
+            {
+                state.Status = RouteSnapWorkStatus.Failed;
+                state.LastError = result.Message;
+            }
         }
 
         state.UpdatedAtUtc = DateTimeOffset.UtcNow;

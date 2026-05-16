@@ -11,6 +11,7 @@ public partial class SavedRoutesPage : ContentPage
     private readonly ObservableCollection<SavedRouteListItem> _routes = new();
     private readonly ToolbarItem _deleteToolbarItem;
     private bool _isEditing;
+    private int _loadVersion;
 
     public SavedRoutesPage()
     {
@@ -54,9 +55,9 @@ public partial class SavedRoutesPage : ContentPage
 
     private async Task LoadRoutesAsync()
     {
+        var loadVersion = ++_loadVersion;
         var sessions = await RouteStorage.ListAsync();
-
-        _routes.Clear();
+        var items = new List<SavedRouteListItem>();
 
         foreach (var session in sessions)
         {
@@ -66,8 +67,16 @@ public partial class SavedRoutesPage : ContentPage
             var state = await RouteSnapBackgroundProcessor.GetStateAsync(session.Id);
             item.ApplyStatus(state);
 
-            _routes.Add(item);
+            items.Add(item);
         }
+
+        if (loadVersion != _loadVersion)
+            return;
+
+        _routes.Clear();
+
+        foreach (var item in items)
+            _routes.Add(item);
     }
 
     private void EditToolbarItem_Clicked(object? sender, EventArgs e)
