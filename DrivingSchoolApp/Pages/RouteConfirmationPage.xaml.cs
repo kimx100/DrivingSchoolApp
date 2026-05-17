@@ -30,6 +30,7 @@ public partial class RouteConfirmationPage : ContentPage
     private readonly IAuthService _authService;
     private readonly IInstructorService _instructorService;
     private readonly IDrivingSchoolService _drivingSchoolService;
+    private static readonly OsrmRoadSnapService SnapService = new();
     
     private const string CurrentStudentNameKey = "CurrentStudentName";
     private const string CurrentInstructorNameKey = "CurrentInstructorName";
@@ -424,14 +425,31 @@ public partial class RouteConfirmationPage : ContentPage
         var snap = await RouteSnapStorage.LoadAsync(session.Id);
         if (snap is not null && HasUsableSnap(session, snap))
         {
-            var snappedGeometry = snap.Geometry;
+            LogSnapBeforeUpload(
+                session.Id,
+                "existing snap used",
+                snap.Geometry.Count,
+                session.Points.Count);
+
             LogRouteUploadCoordinateSource(
                 session.Id,
                 "snapped route coordinates",
-                snappedGeometry.Count,
+                snap.Geometry.Count,
                 session.Points.Count);
 
-            return session.ToDto(snappedGeometry);
+            return session.ToDto(snap.Geometry);
+        }
+
+        snap = await TryCreateSnapBeforeUploadAsync(session);
+        if (snap is not null && HasUsableSnap(session, snap))
+        {
+            LogRouteUploadCoordinateSource(
+                session.Id,
+                "snapped route coordinates",
+                snap.Geometry.Count,
+                session.Points.Count);
+
+            return session.ToDto(snap.Geometry);
         }
 
         LogRouteUploadCoordinateSource(
@@ -441,6 +459,63 @@ public partial class RouteConfirmationPage : ContentPage
             session.Points.Count);
 
         return session.ToDto();
+    }
+
+    private static async Task<SnappedRouteCache?> TryCreateSnapBeforeUploadAsync(RouteSession session)
+    {
+        try
+        {
+            var result = await SnapService.TrySnapAsync(session);
+            if (result.Success && result.Cache is not null && HasUsableSnap(session, result.Cache))
+            {
+                try
+                {
+                    await RouteSnapStorage.SaveAsync(result.Cache);
+                    await MarkSnapBeforeUploadViewedAsync(session.Id);
+                }
+                catch (Exception ex)
+                {
+                    LogSnapBeforeUploadException(
+                        session.Id,
+                        "snap-before-upload cache/state save failed; snapped route still used",
+                        ex);
+                }
+
+                LogSnapBeforeUpload(
+                    session.Id,
+                    "snap-before-upload succeeded",
+                    result.Cache.Geometry.Count,
+                    session.Points.Count);
+
+                return result.Cache;
+            }
+
+            LogSnapBeforeUploadFailure(session.Id, result.Message);
+        }
+        catch (Exception ex)
+        {
+            LogSnapBeforeUploadException(
+                session.Id,
+                "snap-before-upload failed, raw gps fallback used",
+                ex);
+        }
+
+        return null;
+    }
+
+    private static async Task MarkSnapBeforeUploadViewedAsync(string sessionId)
+    {
+        var state = await RouteSnapStateStorage.LoadAsync(sessionId) ?? new RouteSnapState
+        {
+            SessionId = sessionId
+        };
+
+        state.HasBeenViewed = true;
+        state.Status = RouteSnapWorkStatus.Viewed;
+        state.LastError = null;
+        state.UpdatedAtUtc = DateTimeOffset.UtcNow;
+
+        await RouteSnapStateStorage.SaveAsync(state);
     }
 
     private static bool HasUsableSnap(RouteSession route, SnappedRouteCache? snap)
@@ -463,6 +538,44 @@ public partial class RouteConfirmationPage : ContentPage
             $"{source}. SessionId={sessionId}; " +
             $"UploadRoutePoints={uploadPointCount}; " +
             $"RawRoutePoints={rawPointCount}");
+#endif
+    }
+
+    private static void LogSnapBeforeUpload(
+        string sessionId,
+        string message,
+        int uploadPointCount,
+        int rawPointCount)
+    {
+#if DEBUG
+        Debug.WriteLine(
+            $"RouteConfirmationPage: {message}. " +
+            $"SessionId={sessionId}; " +
+            $"UploadRoutePoints={uploadPointCount}; " +
+            $"RawRoutePoints={rawPointCount}");
+#endif
+    }
+
+    private static void LogSnapBeforeUploadFailure(string sessionId, string message)
+    {
+#if DEBUG
+        Debug.WriteLine(
+            "RouteConfirmationPage: snap-before-upload failed, raw gps fallback used. " +
+            $"SessionId={sessionId}; " +
+            $"Reason={message}");
+#endif
+    }
+
+    private static void LogSnapBeforeUploadException(
+        string sessionId,
+        string message,
+        Exception exception)
+    {
+#if DEBUG
+        Debug.WriteLine(
+            $"RouteConfirmationPage: {message}. " +
+            $"SessionId={sessionId}; " +
+            $"{exception.GetType().Name}: {exception.Message}");
 #endif
     }
 
